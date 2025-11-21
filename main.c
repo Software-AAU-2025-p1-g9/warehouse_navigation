@@ -20,10 +20,12 @@ struct edge {
     node* dest;
 };
 
-int node_pos(int size_x, int, x int y){
-    return y * size_x + x;
-}
+int node_pos(int size_x, int, x int y);
 
 int main(void) {
 
+}
+
+int node_pos(int size_x, int, x int y){
+    return y * size_x + x;
 }
