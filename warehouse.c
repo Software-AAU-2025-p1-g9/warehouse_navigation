@@ -1,3 +1,5 @@
+#include "algorithms.h"
+
 struct node {
     const int x;
     const int y;
