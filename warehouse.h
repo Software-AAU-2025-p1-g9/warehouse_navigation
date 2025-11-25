@@ -1,7 +1,11 @@
 struct edge;
 struct node;
+struct order;
 typedef struct edge edge;
 typedef struct node node;
+typedef struct order order;
+
+
 
 struct node {
     const int x;
@@ -20,5 +24,10 @@ struct edge {
     node* dest;
 };
 
+struct order {
+ node node_1;
+ node node_2;
+
+};
 
 int node_pos(int size_x, int x, int y);
