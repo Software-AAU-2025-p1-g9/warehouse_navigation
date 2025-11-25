@@ -19,7 +19,8 @@ for(int i = 0; i < orderamount; i++)
 {
 int indexofshelve = random(0,hylderarraysize) //find et tilfældigt tal mellem 0 og den største indeks af hylder array
 
-test.node_1 = hylderarray[indexofshelve]
+test.node_1 = hylderarray[indexofshelve] //sætter node_1 lige med et tilfældigt node fra hyldearrayet. hyldearrayet burde have både x og y værdierne for alle hylde noder.
+
 //gem node_1 værdien indeni et array of order MANGLER
 i++;
 }
