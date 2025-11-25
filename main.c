@@ -13,12 +13,20 @@ scanf(" %s" , &orderamount);
 int orderrandomizer(order test, int orderamount){
 int pickordrop = random(1,2) //1 = pick up 2 = drop off
 
-if(pickordrop == 1){
+if(pickordrop == 1){ // anden ide til hvordan man kan lave random hylder orders lidt mere optimalt tror jeg
 
+for(int i = 0; i < orderamount; i++)
+{
+int indexofshelve = random(0,hylderarraysize) //find et tilfældigt tal mellem 0 og den største indeks af hylder array
+
+test.node_1 = hylderarray[indexofshelve]
+//gem node_1 værdien indeni et array of order MANGLER
+i++;
+}
 }
 
 
-if(pickordrop == 2) {
+if(pickordrop == 2) { //første ide til hvordan man kan lave random hylder orders
 
 for(int i = 0; i < orderamount; i++)
 {
