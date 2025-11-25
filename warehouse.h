@@ -25,8 +25,8 @@ struct edge {
 };
 
 struct order {
- node node_1;
- node node_2;
+ node node_1; //første order der skal fulføres
+ node node_2; //den anden order der skal fulføres
 
 };
 
