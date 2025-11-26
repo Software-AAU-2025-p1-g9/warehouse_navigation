@@ -11,4 +11,5 @@ add_executable(warehouse_navigation
 
 add_executable(algorithm_test
         algorithms.c
-        warehouse.c)
+        warehouse.c
+        algorithms.h)
