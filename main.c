@@ -1,52 +1,64 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
 #include "warehouse.h"
 
-int orderrandomizer(order test, int orderamount, order[] first);
+void OrderRandomizer(int OrderAmount, order* OrderArray[], node* Pickup[], node* Dropoff[], node* Shelves[]);
 
 int main(void) {
-int orderamount;
+int OrderAmount;
 printf("amount of orders");
-scanf(" %s" , &orderamount);
-order[orderamount] orderarray;
+scanf(" %d" , &OrderAmount);
+order* orderarray[OrderAmount];
+
+node* Shelves[99]; //MIDLERTIDIG VÆRDI FOR SIZE AF ARRAYET
+node* Pickup[99]; //MIDLERTIDIG VÆRDI FOR SIZE AF ARRAYET
+node* Dropoff[99]; //MIDLERTIDIG VÆRDI FOR SIZE AF ARRAYET
+
 
 
 
 }
+//find ud af om ARRAY size tingene tager hele længden eller kun der hvor der er variabler, fordi så skal de måske laves om
 
-
-int orderrandomizer(order test, int orderamount, order[] orderarray){
+void OrderRandomizer(int OrderAmount, order* orderarray[], node* Pickup[], node* Dropoff[], node* Shelves[]){
  // anden ide til hvordan man kan lave random hylder orders lidt mere optimalt tror jeg
+	srand(time(NULL));
 
-for(int i = 0; i < orderamount; i++) //måske <= orderamount? skal lige teste først
+for(int i = 0; i < OrderAmount; i++) //måske <= OrderAmount? skal lige teste først
 {
-	int pickordrop = random(1,2) //1 = pick up 2 = drop off. mening er de skal kunne ændres hver loop
+	int pickordrop = random(1,2); //1 = pick up 2 = drop off. mening er de skal kunne ændres hver loop
 
 	if(pickordrop == 1){ //tilfæld pickup
 
-int indexofpickup = random(0, PickupArraySize)
+int indexofpickup = random(0, PickupArraySize);
 
-test.node_1 = pickuparray(indexofpickup)
-orderarray[i].node_1 = test.node_1;
 
-	int indexofshelve = random(0,hylderarraysize) //find et tilfældigt tal mellem 0 og den største indeks af hylder array
+	orderarray[i].node_1 = Pickup[indexofpickup]; //sætter node_1 lige med et tilfældigt node fra pickuparrayet. pickuparrayet burde have både x og y værdierne for alle pickup noder.
 
-	test.node_2 = hylderarray[indexofshelve] //sætter node_1 lige med et tilfældigt node fra hyldearrayet. hyldearrayet burde have både x og y værdierne for alle hylde noder.
+	int indexofshelve = random(0,hylderarraysize); //find et tilfældigt tal mellem 0 og den største indeks af hylder array
+
+
 	//coden over antager at hylde arrayet består kun af node structs som hver peger på et enkelt shelve, hvor i dens helhed har den koordinatner for alle shelves.
-	orderarray[i].node_2 = test.node_2;
+	orderarray[i].node_2 = Shelves[indexofshelve];
 	i++;
 }
 
 	if(pickordrop == 2){ //tilfæld dropoff
 
-		int indexofshelve = random(0,hylderarraysize) //find et tilfældigt tal mellem 0 og den største indeks af hylder array
+		int indexofshelve = random(0,hylderarraysize); //find et tilfældigt tal mellem 0 og den største indeks af hylder array
 
-			test.node_1 = hylderarray[indexofshelve] //sætter node_1 lige med et tilfældigt node fra hyldearrayet. hyldearrayet burde have både x og y værdierne for alle hylde noder.
-			//coden over antager at hylde arrayet består kun af node structs som hver peger på et enkelt shelve, hvor i dens helhed har den koordinatner for alle shelves.
-			orderarray[i].node_1 = test.node_1;
+		orderarray[i]->node_1 = Shelves[indexofshelve];
+		//coden over antager at hylde arrayet består kun af node structs som hver peger på et enkelt shelve, hvor i dens helhed har den koordinatner for alle shelves.
 
-		int indexofdropoff = random(0, DropoffArraySize)
 
-		test.node_2 = DropoffArray(indexofdropoff)
-		orderarray[i].node_2 = test.node_2;
+		//TESTING GROUND FOR RANDOM
+		int DropoffLength = sizeof(Dropoff) / sizeof(Dropoff[0]);
+
+		int indexofdropoff = rand() % (DropoffLength - 0 +1)+0; //finder random værdi mellem maximum Dropofflength og minimum 0
+		// MAKE IT MORE RANDOM WITH PROBALY SRAND
+		orderarray[i]->node_2 = Dropoff[indexofdropoff];
 
 		i++;
 	}
