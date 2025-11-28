@@ -20,7 +20,6 @@ typedef struct key key;
 struct priority_queue_element{
     key key;
     node* node;
-    priority_queue_element* previous;
     priority_queue_element* next;
 };
 
