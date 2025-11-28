@@ -18,8 +18,8 @@ double h(node n, node goal_node) {
 }
 
 
-key calculate_key(node n, node goal_node, int goal_pos){
-    return (key) {min(n.g[goal_pos], n.rhs[goal_pos]) + h(n, goal_node), min(n.g[goal_pos], n.rhs[goal_pos])};
+key calculate_key(node n, node goal_node, int start_pos){
+    return (key) {min(n.g[start_pos], n.rhs[start_pos]) + h(n, goal_node), min(n.g[start_pos], n.rhs[start_pos])};
 }
 
 int is_key_smaller(key k, key l) {
@@ -68,6 +68,41 @@ void insert_to_priority_queue_after_node(priority_queue_element* n_1, priority_q
     }
 }
 
+int is_in_priority_queue(node* n, priority_queue* queue) {
+    priority_queue_element* element = queue->first;
+    while (element != NULL) {
+        if (element->node == n) {
+            return 1;
+        }
+        element = element->next;
+    }
+    return 0;
+}
+
+void remove_from_priority_queue(node* n, priority_queue* queue) {
+    priority_queue_element* element = queue->first;
+    if (element == NULL) {
+        return;
+    }
+    //Tjekker første plads
+    if (element->node == n) {
+        priority_queue_element* new_next = element->next;
+        free(element);
+        queue->first = new_next;
+        return;
+    }
+    //Tjekker resten
+    while (element->next != NULL) {
+        if (element->next->node == n) {
+            priority_queue_element* new_next = element->next->next;
+            free(element->next);
+            element->next = new_next;
+            return;
+        }
+        element = element->next;
+    }
+}
+
 
 void initialize_lpa_star(node* warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* priority_queues){
     int goal_pos = node_pos(size_x, goal_node->x, goal_node->y);
@@ -85,31 +120,47 @@ void initialize_lpa_star(node* warehouse, int size_x, int size_y, node* start_no
 }
 
 void update_node_lpa_star(int size_x, node* n, node* start, node* goal, priority_queue* queue) {
-    int g_pos = node_pos(size_x, goal->x, goal->y);
+    int s_pos = node_pos(size_x, start->x, start->y);
     if (n != start) {
         //Finder den mindste g + c for alle predecessors
         float min_predecessor_sum = INFINITY;
         for (int i = 0; i < n->neighbour_count; i++) {
-            float predecessor_distance = n->predecessors[i]->source->g[g_pos] + n->predecessors[i]->cost;
+            float predecessor_distance = n->predecessors[i]->source->g[s_pos] + n->predecessors[i]->cost;
             if (predecessor_distance < min_predecessor_sum) {
                 min_predecessor_sum = predecessor_distance;
             }
         }
-        n->rhs[g_pos] = min_predecessor_sum;
+        n->rhs[s_pos] = min_predecessor_sum;
     }
-    /* ------------------------------------------------------------------------------------------------------------------
-    if (n in queue)
+    if (is_in_priority_queue(n, queue))
     {
-        queue.remove(n)
+        remove_from_priority_queue(n, queue);
     }
-    ------------------------------------------------------------------------------------------------------------------ */
-    if (n->g[g_pos] != n->rhs[g_pos]) {
-        insert_to_priority_queue(n, calculate_key(*n, *goal, g_pos), queue);
+    if (n->g[s_pos] != n->rhs[s_pos]) {
+        insert_to_priority_queue(n, calculate_key(*n, *goal, s_pos), queue);
     }
 }
 
-void lpa_star(node* warehouse, int size_x, int size_y, node start_node, node goal_node){
-
+void lpa_star(node* warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* queue){
+    int start_pos = node_pos(size_x, start_node->x, start_node->y);
+    while (is_key_smaller(queue->first->key, calculate_key(*goal_node, *goal_node, start_pos)) || goal_node->rhs[start_pos] != goal_node->g[start_pos]) {
+        node* first_node = queue->first->node;
+        remove_from_priority_queue(first_node, queue);
+        if (first_node->g[start_pos] > first_node->rhs[start_pos]) {
+            first_node->g[start_pos] = first_node->rhs[start_pos];
+            for (int i = 0; i < first_node->neighbour_count; i++) {
+                update_node_lpa_star(size_x, first_node->successors[i]->dest, start_node, goal_node, queue);
+            }
+        }
+        else {
+            first_node->g[start_pos] = INFINITY;
+            //Rækkefølgen her er potentielt en fejlkilde
+            for (int i = 0; i < first_node->neighbour_count; i++) {
+                update_node_lpa_star(size_x, first_node->successors[i]->dest, start_node, goal_node, queue);
+            }
+            update_node_lpa_star(size_x, first_node, start_node, goal_node, queue);
+        }
+    }
 }
 
 

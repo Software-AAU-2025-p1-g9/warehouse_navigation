@@ -30,8 +30,8 @@ typedef struct priority_queue priority_queue;
 
 
 void initialize_lpa_star(node* warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* priority_queues);
-void lpa_star(node* warehouse, int size_x, int size_y, node start_node, node goal_node);
+void lpa_star(node* warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* queue);
 
-key calculate_key(node n, node goal_node, int goal_pos);
+key calculate_key(node n, node goal_node, int start_pos);
 int is_key_smaller(key k, key l);
 void insert_to_priority_queue(node* n, key k, priority_queue* queue);
