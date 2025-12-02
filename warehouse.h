@@ -13,9 +13,9 @@ struct node {
     int neighbour_count;
     edge** successors; //array af pointere
     edge** predecessors; //array af pointere
-    int* g;
-    int* h;
-    int* rhs;
+    double* g;
+    double* h;
+    double* rhs;
 };
 
 struct edge {

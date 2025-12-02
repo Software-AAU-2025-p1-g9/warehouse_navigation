@@ -8,3 +8,8 @@ include_directories(.)
 add_executable(warehouse_navigation
         main.c
         warehouse.c)
+
+add_executable(algorithm_test
+        algorithms.c
+        warehouse.c
+        algorithms.h)
