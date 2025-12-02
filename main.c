@@ -3,7 +3,6 @@
 
 #include "warehouse.h"
 
-void OrderRandomizer(int OrderAmount, order* OrderArray[], node* Pickup[], int PickLength, node* Dropoff[], int DropLength, node* Shelves[], int ShelveLength);
 
 int main(void) {
 	int ShelveLength = 3, DropLength = 3,PickLength = 3;
@@ -26,20 +25,20 @@ int main(void) {
 
 	// VÆRDIERNE OVENOVER FORVENTES FRA LAGER GENERATOR
 
-	int OrderAmount;
+	int Order_Amount;
 	printf("amount of orders");
-	scanf(" %d" , &OrderAmount);
-	order* OrderArray[OrderAmount];
-	OrderRandomizer(OrderAmount, OrderArray, Pickup, PickLength,Dropoff, DropLength, Shelves, ShelveLength);
+	scanf(" %d" , &Order_Amount);
+	order Order_Array[Order_Amount];
+	OrderRandomizer(Order_Amount, Order_Array, Pickup, PickLength,Dropoff, DropLength, Shelves, ShelveLength);
 
 	// slet for loop i endeligt version nedenunder kun for test.
-	for (int i = 0; i < OrderAmount; i++) {
+	for (int i = 0; i < Order_Amount; i++) {
 		printf("Order %d: node_1 = (%d,%d), node_2 = (%d,%d)\n",
 				i+1,
-			   OrderArray[i]->node_1->x,
-			   OrderArray[i]->node_1->y,
-			   OrderArray[i]->node_2->x,
-			   OrderArray[i]->node_2->y);
+			   Order_Array[i].node_1->x,
+			   Order_Array[i].node_1->y,
+			   Order_Array[i].node_2->x,
+			   Order_Array[i].node_2->y);
 	}
 }
 
