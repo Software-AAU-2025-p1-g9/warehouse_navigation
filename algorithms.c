@@ -152,6 +152,11 @@ void remove_from_priority_queue(node* n, priority_queue* queue) {
     }
 }
 
+/**
+ * returnerer første key i queue. Hvis queue er tom, returneres (∞,∞)
+ * @param queue priority queue
+ * @return første key eller (∞,∞)
+ */
 key top_key(priority_queue queue) {
     if (queue.first == NULL) {
         return (key) {INFINITY, INFINITY};
