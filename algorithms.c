@@ -11,10 +11,16 @@
 #include <stdlib.h>
 
 
-void insert_to_priority_queue_after_node(priority_queue_element* n_1, priority_queue_element* n_2, priority_queue* queue);
+float h(node n_1, node n_2);
+
 key calculate_key_lpa_star(node n, node goal_node, int map_id);
 int is_key_smaller(key k, key l);
+
 void insert_to_priority_queue(node* n, key k, priority_queue* queue);
+void insert_to_priority_queue_after_node(priority_queue_element* n_1, priority_queue_element* n_2, priority_queue* queue);
+int is_in_priority_queue(node* n, priority_queue* queue);
+void remove_from_priority_queue(node* n, priority_queue* queue);
+key top_key(priority_queue queue);
 
 
 /**
@@ -38,10 +44,9 @@ float h(node n_1, node n_2) {
  * @param map_id id for det kort der arbejdes i
  * @return den udregnede key
  */
-key calculate_key_lpa_star(node n, node goal_node, int map_id){
+key calculate_key_lpa_star(node n, node goal_node, int map_id) {
     return (key) {f_min(n.g[map_id], n.rhs[map_id]) + h(n, goal_node), f_min(n.g[map_id], n.rhs[map_id])};
 }
-
 
 /**
  * tjekker om k er mindre end l
@@ -147,6 +152,13 @@ void remove_from_priority_queue(node* n, priority_queue* queue) {
     }
 }
 
+key top_key(priority_queue queue) {
+    if (queue.first == NULL) {
+        return (key) {INFINITY, INFINITY};
+    }
+    return queue.first->key;
+}
+
 /**
  * Initialiserer et "kort", der er bestemt af både start_node og goal_node. Kan ikke bruges hvis man ændrer på nogen af dem senere hen
  * @param warehouse array af array af nodes
@@ -156,7 +168,7 @@ void remove_from_priority_queue(node* n, priority_queue* queue) {
  * @param goal_node node pointer
  * @param queues array af priority queues
  */
-void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* queues){
+void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* queues) {
     int map_id = node_pos(size_x, goal_node->x, goal_node->y);
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
@@ -209,7 +221,7 @@ void update_node_lpa_star(node* n, node* start, node* goal, priority_queue* queu
  */
 void lpa_star(node* start_node, node* goal_node, priority_queue* queues, int map_id){
     priority_queue* queue = &queues[map_id];
-    while (is_key_smaller(queue->first->key, calculate_key_lpa_star(*goal_node, *goal_node, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
+    while (is_key_smaller(top_key(*queue), calculate_key_lpa_star(*goal_node, *goal_node, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
         node* first_node = queue->first->node;
         remove_from_priority_queue(first_node, queue);
         if (first_node->g[map_id] > first_node->rhs[map_id]) {
