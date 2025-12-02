@@ -13,14 +13,14 @@ struct node {
     int neighbour_count;
     edge** successors; //array af pointere
     edge** predecessors; //array af pointere
-    double* g;
-    double* h;
-    double* rhs;
+    float* g;
+    float* h;
+    float* rhs;
 };
 
 struct edge {
     node* source;
-    double cost;
+    float cost;
     node* dest;
 };
 
@@ -32,4 +32,6 @@ struct order {
 
 int node_pos(int size_x, int x, int y);
 
-double min(double n_1, double n_2);
+int min(int n_1, int n_2);
+int max(int n_1, int n_2);
+float f_min(float n_1, float n_2);
