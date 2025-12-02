@@ -31,3 +31,7 @@ struct order {
 };
 
 int node_pos(int size_x, int x, int y);
+
+void OrderRandomizer(int OrderAmount, order* OrderArray[], node* Pickup[], int PickLength, node* Dropoff[], int DropLength, node* Shelves[], int ShelveLength);
+
+int UnbiasedRand(int MaxValueforRandWanted);
