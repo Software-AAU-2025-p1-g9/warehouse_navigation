@@ -44,4 +44,3 @@ typedef struct {
 void generate_simple_loop_route(worker* w, node* nodes, int size_x, int size_y);
 
 #endif
-
