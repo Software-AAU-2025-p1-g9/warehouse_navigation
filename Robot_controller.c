@@ -7,38 +7,39 @@
 #include <warehouse.h>
 
 
-typedef struct {
-    node* current_edge;
-    node* next_node;
-    float timeatnextstop;
-    node* goal_1;
-    node* goal_2;
-}Robot;
+void assign_robot_path(Robot* r, order o) {
+    r->goal_1=o.node_1;
+    r->goal_2=o.node_2;
+    //A star
+    //Find shortest path
+    r->has_order = 1;
+    r->path_pos = 0;
+}
 
+void move_robot(Robot* r, float* global_time) {
+    *global_time = r->time_at_next_stop;
+    r->path_pos++;
+    if (r->path_pos == r->path_length) {
+        if (r-> path [r -> path_length - 1]->dest == r-> goal_1 ) {
+            printf("Robot har nået mål 1!\n");
+            //Kør a star
+            // Find shortest path
 
-void update_robot(Robot* r, double* global_time) {
-    *global_time = r->timeatnextstop;
-    r->current_edge = r->next_node;
-    if (r->current_edge == r->goal_1) {
-        printf("Robot har nået mål 1!\n");
-    } else if (r->current_edge == r->goal_2) {
-        printf("Robot har nået mål 2!\n");
+        }
+        else{
+            printf("Robot har nået mål 2!\n");
+            r-> has_order = 0;
+
+        }
+        r->time_at_next_stop = *global_time + 10;
+    }
+    else {
+        r->time_at_next_stop = *global_time + r-> path [r-> path_pos]->cost ;
+
     }
 
-    r->timeatnextstop = *global_time + 1.0;
+
+
+
 }
-int main(){
-    node n1 = {1};
-    node n2 = {2};
 
-    Robot r = {&n1, &n2, 0.0, &n1, &n2};
-
-    double global_time = 0.0;
-
-    for(int i = 0; i < 4; i++) {
-        update_robot(&r, &global_time);
-        printf("Robot er nu på node %d, global tid = %.1f\n", global_time);
-    }
-
-    return 0;
-}
