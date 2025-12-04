@@ -13,14 +13,14 @@ struct node {
     int neighbour_count;
     edge** successors; //array af pointere
     edge** predecessors; //array af pointere
-    double* g;
-    double* h;
-    double* rhs;
+    float* g;
+    float* h;
+    float* rhs;
 };
 
 struct edge {
     node* source;
-    double cost;
+    float cost;
     node* dest;
 };
 
@@ -33,4 +33,3 @@ struct order {
 int node_pos(int size_x, int x, int y);
 
 void OrderRandomizer(int Order_Amount, order Order_Array[], node* Pickup[], int Pick_Length, node* Dropoff[], int Drop_Length, node* Shelves[], int Shelve_Length);
-
