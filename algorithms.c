@@ -248,14 +248,13 @@ void lpa_star(node* start_node, node* goal_node, priority_queue* queues, int map
 
 
 /**
- * Printer g-værdier for alle nodes ud fra en bestem key node. Hvis g er uendelig, printes INF
+ * Printer g-værdier for alle nodes ud fra et bestemt map_id. Hvis g er uendelig, printes INF
  * @param warehouse array af arrays af nodes
  * @param size_x int
  * @param size_y int
- * @param id_node start_node for A* og LPA*. goal_node for D* Lite
+ * @param map_id id for det kort der arbejdes i
  */
-void print_g(node* warehouse, int size_x, int size_y, node id_node) {
-    int map_id = node_pos(size_x, id_node.x, id_node.y);
+void print_g(node* warehouse, int size_x, int size_y, int map_id) {
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
             float node_value = warehouse[node_pos(size_x, x, y)].g[map_id];

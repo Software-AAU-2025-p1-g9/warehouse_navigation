@@ -27,6 +27,6 @@ typedef struct priority_queue priority_queue;
 
 void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* priority_queues);
 void lpa_star(node* start_node, node* goal_node, priority_queue* queue, int map_id);
-void print_g(node* warehouse, int size_x, int size_y, node id_node);
+void print_g(node* warehouse, int size_x, int size_y, int map_id);
 
 #endif //WAREHOUSE_NAVIGATION_ALGORITHMS_H
