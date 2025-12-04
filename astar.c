@@ -12,6 +12,7 @@ void addToOpennodes(int x, int y);
 void calcastar(node** nodes, int startx, int starty, int goalx, int goaly, int map_id);
 
 void astar(node** nodes, int startx, int starty, int goalx, int goaly, int map_id, int* open_nodes, int* optimal_path) {
+void resetg(int x_size, int y_size, int map_id);
 
     //Calculating starting node
     nodes[starty][startx].g[map_id] = 0;
@@ -95,37 +96,8 @@ void addToOpennodes(int x, int y) {
     opennodes[i][1] = x;
 }
 
-/*
-void calcastar(node** nodes, int startx, int starty, int goalx, int goaly, int map_id) {
-    //helping int
-    int x = goalx,
-        y = goaly,
-        numberstep = 0;
-
-    optimalpath[0][0] = y;
-    optimalpath[0][1] = x;
-
-    numberstep = 1;
-
-    while (x != startx && y != starty) {
-        //Temporary int
-        int temp= INFINITY;
-
-        int temp_x = x,
-            temp_y = y;
-
-        for (int i = 0; i < 8; i++) {
-            if (nodes[temp_y][temp_x].successors[i].dest.g[map_id] < n) {
-                temp = nodes[temp_y][temp_x].successors[i].dest.g[map_id];
-                x = nodes[temp_y][temp_x].successors[i].dest.x;
-                y = nodes[temp_y][temp_x].successors[i].dest.y;
-            }
-        }
-
-        optimalpath[numberstep][0] = y;
-        optimalpath[numberstep][1] = x;
-
-        numberstep++;
-    }
+void resetg(int x_size, int y_size, int map_id) {
+    for (int i = 0; i < y_size; i++) {
+        for (int j = 0; j < x_size) {
+            nodes[i][j].g[map_id] = INFINITY;
 }
-*/
