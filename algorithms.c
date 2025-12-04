@@ -13,7 +13,7 @@
 
 float h(node n_1, node n_2);
 
-key calculate_key_lpa_star(node n, node goal_node, int map_id);
+key calculate_key_lpa_star(node n, node goal_node, float key_modifier, int map_id);
 int is_key_smaller(key k, key l);
 
 void insert_to_priority_queue(node* n, key k, priority_queue* queue);
@@ -44,8 +44,8 @@ float h(node n_1, node n_2) {
  * @param map_id id for det kort der arbejdes i
  * @return den udregnede key
  */
-key calculate_key_lpa_star(node n, node goal_node, int map_id) {
-    return (key) {f_min(n.g[map_id], n.rhs[map_id]) + h(n, goal_node), f_min(n.g[map_id], n.rhs[map_id])};
+key calculate_key_lpa_star(node n, node goal_node, float key_modifier, int map_id) {
+    return (key) {f_min(n.g[map_id], n.rhs[map_id]) + h(n, goal_node) + key_modifier, f_min(n.g[map_id], n.rhs[map_id])};
 }
 
 /**
@@ -171,10 +171,18 @@ key top_key(priority_queue queue) {
  * @param size_y højde af warehouse
  * @param start_node node pointer
  * @param goal_node node pointer
- * @param queues array af priority queues
+ * @param map_datas array af map_datas
  */
-void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, priority_queue* queues) {
+void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, map_data* map_datas) {
     int map_id = node_pos(size_x, goal_node->x, goal_node->y);
+    if (map_datas[map_id].initialized == 1) {
+        printf("Map med map_id %d er allerede initialiseret\n", map_id);
+        exit(EXIT_FAILURE);
+    }
+    map_datas[map_id].initialized = 1;
+    map_datas[map_id].key_modifier = 0;
+    map_datas[map_id].last_goal_node = start_node;
+
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
             warehouse[y][x].g[map_id] = INFINITY;
@@ -183,8 +191,14 @@ void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_n
     }
     goal_node->g[map_id] = INFINITY;
     goal_node->rhs[map_id] = INFINITY;
-    key start_key = calculate_key_lpa_star(*start_node, *goal_node, map_id);
-    queues[map_id].first = &(priority_queue_element) {start_key, start_node, NULL};
+    key start_key = calculate_key_lpa_star(*start_node, *goal_node, map_datas[map_id].key_modifier, map_id);
+    map_datas[map_id].priority_queue.first = (priority_queue_element*) malloc(sizeof(priority_queue_element));
+    if (map_datas[map_id].priority_queue.first == NULL) {
+        printf("Ikke mere memory\n");
+    }
+    map_datas[map_id].priority_queue.first->key = start_key;
+    map_datas[map_id].priority_queue.first->node = start_node;
+    map_datas[map_id].priority_queue.first->next = NULL;
 }
 
 
@@ -193,10 +207,11 @@ void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_n
  * @param n pointer til node der skal opdateres
  * @param start node pointer
  * @param goal node pointer
+ * @param key_modifier den key modifier der gælder for kortet
  * @param queue priority_queue pointer
  * @param map_id id for det kort der arbejdes i
  */
-void update_node_lpa_star(node* n, node* start, node* goal, priority_queue* queue, int map_id) {
+void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, priority_queue* queue, int map_id) {
     if (n != start) {
         //Finder den mindste g + c for alle predecessors
         float min_predecessor_sum = INFINITY;
@@ -213,7 +228,7 @@ void update_node_lpa_star(node* n, node* start, node* goal, priority_queue* queu
         remove_from_priority_queue(n, queue);
     }
     if (n->g[map_id] != n->rhs[map_id]) {
-        insert_to_priority_queue(n, calculate_key_lpa_star(*n, *goal, map_id), queue);
+        insert_to_priority_queue(n, calculate_key_lpa_star(*n, *goal, key_modifier, map_id), queue);
     }
 }
 
@@ -221,27 +236,38 @@ void update_node_lpa_star(node* n, node* start, node* goal, priority_queue* queu
  * Opdaterer warehouse, så den korteste vej fra start_node til goal_node er kortlagt. Kan indtil videre kun bruges hvis start_node og goal_node er samme som dem der blev brugt i initialize_lpa_star
  * @param start_node node pointer
  * @param goal_node node pointer
- * @param queues array af priority_queues
+ * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
-void lpa_star(node* start_node, node* goal_node, priority_queue* queues, int map_id){
-    priority_queue* queue = &queues[map_id];
-    while (is_key_smaller(top_key(*queue), calculate_key_lpa_star(*goal_node, *goal_node, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
+void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+    map_datas[map_id].key_modifier += h(*map_datas[map_id].last_goal_node, *goal_node);
+    map_datas[map_id].last_goal_node = goal_node;
+
+    float key_modifier = map_datas[map_id].key_modifier;
+    priority_queue* queue = &(map_datas[map_id].priority_queue);
+
+    while (is_key_smaller(top_key(*queue), calculate_key_lpa_star(*goal_node, *goal_node, key_modifier, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
+        key old_key = top_key(*queue);
         node* first_node = queue->first->node;
         remove_from_priority_queue(first_node, queue);
-        if (first_node->g[map_id] > first_node->rhs[map_id]) {
+        key new_key = calculate_key_lpa_star(*first_node, *goal_node, key_modifier, map_id);
+
+        if (is_key_smaller(old_key, new_key)) {
+            insert_to_priority_queue(first_node, new_key, queue);
+        }
+        else if (first_node->g[map_id] > first_node->rhs[map_id]) {
             first_node->g[map_id] = first_node->rhs[map_id];
             for (int i = 0; i < first_node->neighbour_count; i++) {
-                update_node_lpa_star(first_node->successors[i]->dest, start_node, goal_node, queue, map_id);
+                update_node_lpa_star(first_node->successors[i]->dest, start_node, goal_node, key_modifier, queue, map_id);
             }
         }
         else {
             first_node->g[map_id] = INFINITY;
             //Rækkefølgen her er potentielt en fejlkilde
             for (int i = 0; i < first_node->neighbour_count; i++) {
-                update_node_lpa_star(first_node->successors[i]->dest, start_node, goal_node, queue, map_id);
+                update_node_lpa_star(first_node->successors[i]->dest, start_node, goal_node, key_modifier, queue, map_id);
             }
-            update_node_lpa_star(first_node, start_node, goal_node, queue, map_id);
+            update_node_lpa_star(first_node, start_node, goal_node, key_modifier, queue, map_id);
         }
     }
 }
