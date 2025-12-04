@@ -22,6 +22,7 @@ int is_in_priority_queue(node* n, priority_queue* queue);
 void remove_from_priority_queue(node* n, priority_queue* queue);
 key top_key(priority_queue queue);
 
+void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, priority_queue* queue, int map_id);
 
 /**
  * returnerer den optimistiske afstand mellem to nodes
@@ -38,7 +39,7 @@ float h(node n_1, node n_2) {
 }
 
 /**
- *
+ * Udregner en key ud fra de givne input. Bruger metode inspireret af D* Lite
  * @param n node der skal regnes key for
  * @param goal_node mål-node der skal regnes key ud fra
  * @param map_id id for det kort der arbejdes i
@@ -165,7 +166,7 @@ key top_key(priority_queue queue) {
 }
 
 /**
- * Initialiserer et "kort", der er bestemt af både start_node og goal_node. Kan ikke bruges hvis man ændrer på nogen af dem senere hen
+ * Initialiserer et "kort", der er bestemt af start_node. Må kun bruges en gang
  * @param warehouse array af array af nodes
  * @param size_x bredde af warehouse
  * @param size_y højde af warehouse
@@ -174,14 +175,15 @@ key top_key(priority_queue queue) {
  * @param map_datas array af map_datas
  */
 void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, map_data* map_datas) {
-    int map_id = node_pos(size_x, goal_node->x, goal_node->y);
+    int map_id = node_pos(size_x, start_node->x, start_node->y);
     if (map_datas[map_id].initialized == 1) {
-        printf("Map med map_id %d er allerede initialiseret\n", map_id);
+        printf("Kortet med map_id %d er allerede initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
     map_datas[map_id].initialized = 1;
+    //De næste to linjer er fra D* Lite
     map_datas[map_id].key_modifier = 0;
-    map_datas[map_id].last_goal_node = start_node;
+    map_datas[map_id].last_goal_node = goal_node;
 
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
@@ -189,8 +191,7 @@ void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_n
             warehouse[y][x].rhs[map_id] = INFINITY;
         }
     }
-    goal_node->g[map_id] = INFINITY;
-    goal_node->rhs[map_id] = INFINITY;
+    start_node->rhs[map_id] = 0;
     key start_key = calculate_key_lpa_star(*start_node, *goal_node, map_datas[map_id].key_modifier, map_id);
     map_datas[map_id].priority_queue.first = (priority_queue_element*) malloc(sizeof(priority_queue_element));
     if (map_datas[map_id].priority_queue.first == NULL) {
@@ -233,13 +234,19 @@ void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, 
 }
 
 /**
- * Opdaterer warehouse, så den korteste vej fra start_node til goal_node er kortlagt. Kan indtil videre kun bruges hvis start_node og goal_node er samme som dem der blev brugt i initialize_lpa_star
+ * Opdaterer warehouse, så den korteste vej fra start_node til goal_node er kortlagt. initialize_lpa_star skal være brugt først.
  * @param start_node node pointer
  * @param goal_node node pointer
  * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
 void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+    if (map_datas[map_id].initialized == 0) {
+        printf("kortet med map_id %d er ikke initialiseret", map_id);
+        exit(EXIT_FAILURE);
+    }
+
+    //key_modifier bliver øget med afstanden mellem sidste mål-node og nuværende. Baseret på D* Lite
     map_datas[map_id].key_modifier += h(*map_datas[map_id].last_goal_node, *goal_node);
     map_datas[map_id].last_goal_node = goal_node;
 
@@ -247,6 +254,8 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
     priority_queue* queue = &(map_datas[map_id].priority_queue);
 
     while (is_key_smaller(top_key(*queue), calculate_key_lpa_star(*goal_node, *goal_node, key_modifier, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
+        //Følgende del er baseret på D* Lite, når den håndterer flytning af start. I dette tilfælde er det ændret, så den håndterer flytning af mål.
+        //Hvis top_key er mindre end den burde være efter key_modifier er ændret, lægges den tilbage i køen med sin nye key.
         key old_key = top_key(*queue);
         node* first_node = queue->first->node;
         remove_from_priority_queue(first_node, queue);
@@ -255,6 +264,7 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
         if (is_key_smaller(old_key, new_key)) {
             insert_to_priority_queue(first_node, new_key, queue);
         }
+        //Her slutter D* Lite-delen
         else if (first_node->g[map_id] > first_node->rhs[map_id]) {
             first_node->g[map_id] = first_node->rhs[map_id];
             for (int i = 0; i < first_node->neighbour_count; i++) {
