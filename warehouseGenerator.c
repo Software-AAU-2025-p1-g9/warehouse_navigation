@@ -4,17 +4,22 @@
 #include <stdlib.h>
 // -----------------------------------------
 // laver fast array til alle modes og tæller til hvor mange, der er lavet.
-#define MAX_NODES 10000
-static node nodePool[MAX_NODES];
-static int nodeCount = 0;
+
+struct node;  // fortæller, at struct node eksisterer
 
 // ============================================================
 // Hjælpefunktion: Opret en ny graf-node
 // ============================================================
-node* newNode(int x, int y) {
-    if (nodeCount >= MAX_NODES) return NULL;
+node* newNode(int x, int y) { // newnode er lige lidt ligegydig, da den returnerer
+    // Vi allokerer direkte et node-array og sætter alt til 0/NULL med calloc
+    node* n = calloc(1, sizeof(node)); // calloc sætter alle felter til 0/NULL
+    if (!n) return NULL;
 
-    node* n = &nodePool[nodeCount++];
+    // Felterne x og y er egentlig ligegyldige, men vi sætter dem for reference
+    n->x = x;
+    n->y = y;
+
+    // Resten nulstilles af calloc, men vi kan også eksplicit sætte dem
     n->neighbour_count = 0;
     n->successors = NULL;
     n->predecessors = NULL;
@@ -25,117 +30,111 @@ node* newNode(int x, int y) {
     return n;
 }
 
+
 // ============================================================
 // createWarehouse
 //  Opretter lagerets grid af NodeGrid.
 // ============================================================
-Warehouse* createWarehouse(int width, int height) {
-    if (width <= 0 || height <= 0) return NULL;
+NodeGrid** createWarehouse(int width, int height) { // ændre den til ikke at være en struct (warehouse)
+    if (width <= 0 || height <= 0) {
+        fprintf(stderr, "ERROR: Invalid warehouse size!\n");
+        exit(EXIT_FAILURE);
+    }
 
-    Warehouse* w = malloc(sizeof(Warehouse));
-    if (!w) return NULL;
-
-    w->width = width;
-    w->height = height;
-    w->shelf_count = 0;
-    w->dropoff_count = 0;
-    w->pickup_count = 0;
-
-    // Alloker grid
-    w->grid = malloc(sizeof(NodeGrid*) * height);
-    if (!w->grid) { free(w); return NULL; }
+    // Alloker grid som array af pointers til rækker
+    NodeGrid** grid = malloc(sizeof(NodeGrid*) * height);
+    if (!grid) {
+        fprintf(stderr, "ERROR: Failed to allocate warehouse grid!\n");
+        exit(EXIT_FAILURE);
+    }
 
     for (int y = 0; y < height; y++) {
-        w->grid[y] = malloc(sizeof(NodeGrid) * width);
+        grid[y] = calloc(width, sizeof(NodeGrid)); // calloc nulstiller alt
+        if (!grid[y]) {
+            fprintf(stderr, "ERROR: Failed to allocate warehouse row %d!\n", y);
+            for (int i = 0; i < y; i++) free(grid[i]);
+            free(grid);
+            exit(EXIT_FAILURE);
+        }
+
         for (int x = 0; x < width; x++) {
-            w->grid[y][x].x = x;
-            w->grid[y][x].y = y;
-            w->grid[y][x].id = y * width + x;
-            w->grid[y][x].graphNode = NULL;
+            grid[y][x].x = x;
+            grid[y][x].y = y;
+            grid[y][x].id = y * width + x;
+            grid[y][x].graphNode = NULL;
         }
     }
 
-    // Alloker arrays til shelves, dropoffs og pickups
-    w->shelves = malloc(sizeof(node*) * width * height);
-    w->dropoffs = malloc(sizeof(node*) * width * height);
-    w->pickups = malloc(sizeof(node*) * width * height);
-
-    return w;
+    return grid; // Shelves/dropoffs/pickups arrays allokeres senere, når vi kender antal
 }
 
 // ============================================================
 // generateWarehouseLayout
 //  Fylder lageret med shelves og dropoffs
 // ============================================================
-void generateWarehouseLayout(Warehouse* w, int corridorWidth, int shelfBlockWidth) {
+void generateWarehouseLayout(NodeGrid** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, int corridorWidth, int shelfBlockWidth) {
+    *shelf_count = 0;
+    *dropoff_count = 0;
+
     int x = 0;
-    while (x < w->width) {
+    while (x < width) {
         // Hylde-blok
-        for (int s = 0; s < shelfBlockWidth && x < w->width; s++, x++) {
-            for (int y = 1; y < w->height - 1; y++) {
+        for (int s = 0; s < shelfBlockWidth && x < width; s++, x++) {
+            for (int y = 1; y < height - 1; y++) {
                 node* n = newNode(x, y);
-                w->shelves[w->shelf_count++] = n;
-                w->grid[y][x].graphNode = n;
+                (*shelves)[(*shelf_count)++] = n;
+                grid[y][x].graphNode = n;
             }
         }
-        // Korridor-blok (tom)
-        for (int c = 0; c < corridorWidth && x < w->width; c++, x++) { }
+        // Korridor-blok (tom) Få dette rettet.
+        for (int c = 0; c < corridorWidth && x < width; c++, x++) { }
     }
 
-    // Dropoff i midten
-    int mx = w->width / 2;
-    int my = w->height / 2;
-    node* dropNode = newNode(mx, my);
-    w->dropoffs[w->dropoff_count++] = dropNode;
-    w->grid[my][mx].graphNode = dropNode;
+    // Dropoff på tilfældig walkable position i korridor
+    int dropX = corridorWidth; // eksempel: første korridorkolonne
+    int dropY = height / 2;
+    node* dropNode = newNode(dropX, dropY); // Sæt den et andet sted.
+    (*dropoffs)[(*dropoff_count)++] = dropNode;
+    grid[dropY][dropX].graphNode = dropNode;
 }
 
 // ============================================================
 // setPickupPoints
-//  Tilføj alle walkable felter som pickup points
+//  Tilføj alle walkable felter som pickup points (ikke alle felter. bestemt sted i en væg)
 // ============================================================
-void setPickupPoints(Warehouse* w) {
-    w->pickup_count = 0;
+void setPickupPoints(NodeGrid** grid, int width, int height, node*** pickups, int* pickup_count) {
+    *pickup_count = 0;
 
-    for (int y = 0; y < w->height; y++) {
-        for (int x = 0; x < w->width; x++) {
-            NodeGrid* c = &w->grid[y][x];
+    for (int y = 1; y < height - 1; y++) { // eksempel: kun korridorer
+        for (int x = 0; x < width; x++) {
+            NodeGrid* c = &grid[y][x];
             if (!c->graphNode) c->graphNode = newNode(c->x, c->y);
 
-            int is_shelf = 0;
-            for (int s = 0; s < w->shelf_count; s++) {
-                if (w->shelves[s] == c->graphNode) { is_shelf = 1; break; }
-            }
-
-            if (!is_shelf) {
-                w->pickups[w->pickup_count++] = c->graphNode;
-            }
+            (*pickups)[(*pickup_count)++] = c->graphNode;
         }
     }
 
-    printf("Total pickup points: %d\n", w->pickup_count);
+    printf("Total pickup points: %d\n", *pickup_count);
 }
 
 // ============================================================
 // printWarehouse
 //  Printer lager med symboler: S, D, P, .
 // ============================================================
-void printWarehouse(Warehouse* w) {
-    if (!w) return;
-
-    for (int y = 0; y < w->height; y++) {
-        for (int x = 0; x < w->width; x++) {
-            NodeGrid* c = &w->grid[y][x];
+void printWarehouse(NodeGrid** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count) {
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            NodeGrid* c = &grid[y][x];
             int is_shelf = 0;
-            for (int s = 0; s < w->shelf_count; s++) {
-                if (w->shelves[s] == c->graphNode) { is_shelf = 1; break; }
+            for (int s = 0; s < shelf_count; s++) {
+                if (shelves[s] == c->graphNode) { is_shelf = 1; break; }
             }
             if (is_shelf) printf("S");
-            else if (c->graphNode == w->dropoffs[0]) printf("D");
+            else if (c->graphNode == dropoffs[0]) printf("D");
             else {
                 int is_pickup = 0;
-                for (int p = 0; p < w->pickup_count; p++) {
-                    if (w->pickups[p] == c->graphNode) { is_pickup = 1; break; }
+                for (int p = 0; p < pickup_count; p++) {
+                    if (pickups[p] == c->graphNode) { is_pickup = 1; break; }
                 }
                 if (is_pickup) printf("P");
                 else printf(".");
@@ -147,35 +146,88 @@ void printWarehouse(Warehouse* w) {
 
 // ============================================================
 // createGraphFromWarehouse
-//  Opretter graf af alle walkable felter
+//  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
 // ============================================================
-void createGraphFromWarehouse(Warehouse* w, node*** outList, int* outCount) {
-    if (!w) return;
+void createGraphFromWarehouse(int width, int height, NodeGrid** grid, node** shelves, int shelf_count, node*** outList, int* outCount) {
+    if (!grid) return;
 
-    int max = w->width * w->height;
+    int max = width * height;
     node** list = malloc(sizeof(node*) * max);
     int count = 0;
 
-    // Opret noder for alle walkable felter
-    for (int y = 0; y < w->height; y++) {
-        for (int x = 0; x < w->width; x++) {
-            NodeGrid* g = &w->grid[y][x];
+    // 1. Opret noder for alle walkable felter (ikke hylder) Få kigget på dette også
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            NodeGrid* g = &grid[y][x];
+
+            // Spring hylder over
             int is_shelf = 0;
-            for (int s = 0; s < w->shelf_count; s++) {
-                if (w->shelves[s] == g->graphNode) { is_shelf = 1; break; }
+            for (int s = 0; s < shelf_count; s++) {
+                if (shelves[s] == g->graphNode) { is_shelf = 1; break; }
             }
             if (is_shelf) continue;
 
+            // Opret node hvis ikke allerede oprettet
             if (!g->graphNode) g->graphNode = newNode(x, y);
             list[count++] = g->graphNode;
         }
     }
 
-    // Output
-    *outList = list;
+    // 2. Retninger for 8 naboer (ortogonale + diagonale)
+    int dirs[8][2] = {
+        { 0,-1}, { 0, 1}, {-1, 0}, { 1, 0},  // op, ned, venstre, højre
+        {-1,-1}, {-1, 1}, { 1,-1}, { 1, 1}   // diagonaler
+    };
+
+    // 3. Opret edges for hver node
+    for (int i = 0; i < count; i++) {
+        node* n = list[i];
+
+        // Alloker arrays til successorer og predecessorer
+        n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
+        n->predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
+        n->neighbour_count = 0;
+
+        for (int d = 0; d < MAX_EDGES; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
+            int nx = n->x + dirs[d][0];
+            int ny = n->y + dirs[d][1];
+
+            // Tjek grænser
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height)
+                continue;
+
+            NodeGrid* ng = &grid[ny][nx];
+            if (!ng->graphNode) continue; // Tjek at node findes
+
+            // For diagonaler: tjek at den ikke krydser hylde
+            if (d >= 4) { // diagonale retninger
+                NodeGrid* n1 = &grid[n->y][ny];  // ortogonal 1
+                NodeGrid* n2 = &grid[ny][n->x];  // ortogonal 2
+                int blocked = 0;
+                for (int s = 0; s < shelf_count; s++) {
+                    if (shelves[s] == n1->graphNode || shelves[s] == n2->graphNode) {
+                        blocked = 1;
+                        break;
+                    }
+                }
+                if (blocked) continue;
+            }
+
+            // Opret edge
+            edge* e = malloc(sizeof(edge));
+            e->source = n;
+            e->dest   = ng->graphNode;
+            e->cost   = (d < 4) ? 1.0 : 1.414; // diagonaler koster √2
+
+            n->successors[n->neighbour_count++] = e;
+            ng->graphNode->predecessors[ng->graphNode->neighbour_count++] = e;
+        }
+    }
+
+    // 4. Returner pointer til alle nodes og antal
+    *outList  = list;
     *outCount = count;
 }
-
 // ============================================================
 // freeGraph
 //  Frigør kun arrayet af node-pointers
@@ -189,15 +241,14 @@ void freeGraph(node** list, int count) {
 // freeWarehouse
 //  Frigør grid og arrays
 // ============================================================
-void freeWarehouse(Warehouse* w) {
-    if (!w) return;
+void freeWarehouse(NodeGrid** grid, int width, int height, node** shelves, node** dropoffs, node** pickups) {
+    if (!grid) return;
 
-    for (int y = 0; y < w->height; y++)
-        free(w->grid[y]);
-    free(w->grid);
+    for (int y = 0; y < height; y++)
+        free(grid[y]);
+    free(grid);
 
-    free(w->shelves);
-    free(w->dropoffs);
-    free(w->pickups);
-    free(w);
+    free(shelves);
+    free(dropoffs);
+    free(pickups);
 }
