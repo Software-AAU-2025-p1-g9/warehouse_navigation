@@ -11,28 +11,24 @@ int main(void) {
     int size_y = 3;
 
     // Array of 9 nodes (size_x * size_y)
-    node nodes[9];
+    node nodes[size_y][size_x];
+
 
     // Fill the node array with coordinates
-    int idx = 0;
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
 
-            // Set grid position of the node
-            nodes[idx].x = x;
-            nodes[idx].y = y;
-
-            /* These will store edges for pathfinding but
-            will be useful later on once we have implemented a pathfinding algorithme */
-            nodes[idx].neighbour_count = 0;
-            nodes[idx].successors = NULL;
-            nodes[idx].predecessors = NULL;
-            nodes[idx].g = NULL;
-            nodes[idx].h = NULL;
-            nodes[idx].rhs = NULL;
-
-            // move to the next node in the array
-            idx++;
+            // These will store edges for pathfinding but
+            /* will be useful later on once we have implemented a pathfinding algorithme
+             * and a layout */
+            nodes[y][x].x = x;
+            nodes[y][x].y = y;
+            nodes[y][x].neighbour_count = 0;
+            nodes[y][x].successors = NULL;
+            nodes[y][x].predecessors = NULL;
+            nodes[y][x].g = NULL;
+            nodes[y][x].h = NULL;
+            nodes[y][x].rhs = NULL;
         }
     }
 
@@ -44,19 +40,21 @@ int main(void) {
 
     // Give each worker a random A → B → C → A loop route
     for (int i = 0; i < num_workers; i++) {
-        generate_simple_loop_route(&workers[i], nodes, size_x, size_y);
+        generate_simple_loop_route(&workers[i], size_y, size_x, nodes);
+        calculate_times(&workers[i]);
     }
 
     for (int i = 0; i < num_workers; i++) {
-        printf("Workers route (length = %d):\n", i, workers[i].route_length);
+        printf("Workers route (length = %d):\n", workers[i].route_length);
 
         for (int s = 0; s < workers[i].route_length; s++) {
-            printf("Step %d: nodes at (%d, %d)\n",
+            printf("Step %d: (%d, %d), stay time is %.2f\n",
                 s,
                 workers[i].route[s]->x,
-                workers[i].route[s]->y);
+                workers[i].route[s]->y,
+                workers[i].stay_time[s]);
         }
     }
-
+    printf("\n");
     return 0;
 }

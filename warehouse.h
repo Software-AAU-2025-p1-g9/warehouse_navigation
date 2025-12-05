@@ -5,10 +5,16 @@
 struct edge;
 struct node;
 struct order;
+
 typedef struct edge edge;
 typedef struct node node;
 typedef struct order order;
-
+typedef struct {
+    node* route[MAX_ROUTE];
+    float stay_time[MAX_ROUTE];
+    int route_length;
+    int position;
+} worker;
 
 struct node {
     int x;
@@ -32,15 +38,20 @@ struct order {
  node node_2;
 
 };
-
+// Converts (x, y) grid coordinates into a single integer
 int node_pos(int size_x, int x, int y);
 
-typedef struct {
-    node* route[MAX_ROUTE];
-    int route_length;
-    int position;
-} worker;
+/* This function generate a loop route
+ * and create a test route for these "workers" */
+void generate_simple_loop_route(worker* w, int size_y, int size_x,
+                                node nodes[size_y][size_x]);
 
-void generate_simple_loop_route(worker* w, node* nodes, int size_x, int size_y);
+// Find edges that goes from "from" -> "to"
+edge* find_edge(node* from, node* to);
+
+/* This function calculate for how long each step takes for these "workers"
+ * We look up the corresponding edge and use its stay_time function as the cost */
+void calculate_times(worker* w);
+
 
 #endif
