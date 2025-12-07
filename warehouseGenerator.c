@@ -45,7 +45,7 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
     }
 
     // Alloker grid som array af pointers til rækker
-    node*** grid= malloc(sizeof(node*) * height);
+    node** grid= malloc(sizeof(node*) * height);
     if (!grid) {
         fprintf(stderr, "ERROR: Failed to allocate warehouse grid!\n");
         exit(EXIT_FAILURE);
@@ -61,8 +61,8 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
         }
 
         for (int x = 0; x < width; x++) {
-            grid[y][x]->x = x;
-            grid[y][x]->y = y;
+            grid[y][x].x = x;
+            grid[y][x].y = y;
 
         }
     }
@@ -72,87 +72,85 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
 
 // ============================================================
 // generateWarehouseLayout
-//  Fylder lageret med shelves og dropoffs
+//  Fylder lageret med shelves, dropoffs og pickups
 // ============================================================
-void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, int corridorWidth)
+void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth)
 {
     *shelf_count = 0;
     *dropoff_count = 0;
+    *pickup_count = 0; // <-- tilføjet fra setPickupPoints
 
     int x = 0;
+    // Første loop: gennem hele bredden, hylde- og korridor-blokke tomme
     while (x < width) {
-        for (int s = 0; s < 2 && x < width; s++, x++) {
-            *shelf_count += height - 2;
-        }
-        for (int c = 0; c < corridorWidth && x < width; c++, x++);
+        // Hylde-blok (tom)
+        for (int s = 0; s < 2 && x < width; s++, x++) { }
+
+        // Korridor-blok (tom)
+        for (int c = 0; c < corridorWidth && x < width; c++, x++) { }
     }
 
+    // Nu har vi shelf_count klar
+    // <-- NYT: malloc shelves-array og error handling
+    *shelves = (node**) malloc(sizeof(node*) * (*shelf_count));
+    if (!*shelves) {
+        fprintf(stderr, "ERROR: Failed to allocate shelves array!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int shelves_in_array = 0; // <-- NYT: start indeks til fyldning af shelves
+
+    // Nyt loop: fyld pickups og opdater costs
+    x = 0;
+    while (x < width) {
         // Hylde-blok
-        x = 0;
-        while (x < width) {
-        for (int s = 0; s < 2 && x < width; s++, x++) {// ændrede shelfBlcokWidth med 2. er det forkert?
+        for (int s = 0; s < 2 && x < width; s++, x++) {
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
+
+                // Tilføj til shelves-array
+                (*shelves)[shelves_in_array++] = n; // <-- NYT
+
+                // Opdater costs til predecessors og successors
                 for (int i = 0; i < n->neighbour_count; i++) {
                     n->predecessors[i]->cost = INFINITY;
                     n->successors[i]->cost = INFINITY;
                 }
-
             }
         }
-            // Korridor-blok
-            int x_corr = 0;
-            while (x_corr < width) {
-                for (int c = 0; c < corridorWidth && x_corr < width; c++, x_corr++) {
-                    for (int y = 1; y < height - 1; y++) {
-                        node* n = &grid[y][x_corr];
-                        if (!n) continue; // spring hylder over
 
-                        // Opdater costs til predecessors og successors
-                        for (int i = 0; i < n->neighbour_count; i++) {
-                            edge* e = n->predecessors[i];
-                            if (!e) continue;
-                            double dx = n->x - e->source->x;
-                            double dy = n->y - e->source->y;
-                            e->cost = sqrt(dx*dx + dy*dy);
-                        }
-                        for (int i = 0; i < n->neighbour_count; i++) {
-                            edge* e = n->successors[i];
-                            if (!e) continue;
-                            double dx = n->x - e->dest->x;
-                            double dy = n->y - e->dest->y;
-                            e->cost = sqrt(dx*dx + dy*dy);
-                        }
-                    }
+        // Korridor-blok
+        for (int c = 0; c < corridorWidth && x < width; c++, x++) {
+            for (int y = 1; y < height - 1; y++) {
+                node* n = &grid[y][x];
+
+                // Tilføj til pickups direkte (fra setPickupPoints)
+                (*pickups)[(*pickup_count)++] = n;
+
+                // Opdater costs til predecessors og successors
+                for (int i = 0; i < n->neighbour_count; i++) {
+                    edge* e = n->predecessors[i];
+                    if (!e) continue;
+                    float dx = (float)(n->x - e->source->x);
+                    float dy = (float)(n->y - e->source->y);
+                    e->cost = sqrtf(dx*dx + dy*dy);
+                }
+                for (int i = 0; i < n->neighbour_count; i++) {
+                    edge* e = n->successors[i];
+                    if (!e) continue;
+                    float dx = (float)(n->x - e->dest->x);
+                    float dy = (float)(n->y - e->dest->y);
+                    e->cost = sqrtf(dx*dx + dy*dy); // float version
                 }
             }
+        }
     }
 
     // Dropoff på tilfældig walkable position i korridor
     int drop_x = corridorWidth; // eksempel: første korridorkolonne
     int drop_y = height / 2;
     (*dropoffs)[(*dropoff_count)++] = &grid[drop_y][drop_x];
-
 }
-
-// ============================================================
-// setPickupPoints
-//  Tilføj alle walkable felter som pickup points (ikke alle felter. bestemt sted i en væg)
-// ============================================================
-void setPickupPoints(node*** grid, int width, int height, node*** pickups, int* pickup_count) {
-        *pickup_count = 0;
-
-        for (int y = 1; y < height - 1; y++) { // eksempel: kun korridorer
-            for (int x = 0; x < width; x++) {
-                // Opret node hvis den ikke allerede findes
-
-                // Tilføj noden direkte som pickup point
-                (*pickups)[(*pickup_count)++] = &grid[y][x];
-            }
-        }
-
-        printf("Total pickup points: %d\n", *pickup_count);
-    }
 // ============================================================
 // printWarehouse
 //  Printer lager med symboler: S, D, P, .
@@ -184,14 +182,26 @@ void printWarehouse(node*** grid, int width, int height, node** shelves, int she
 // createGraphFromWarehouse ( create_graph=
 //  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
 // ============================================================
-void create_graph(int width, int height, node*** grid, node** shelves, int shelf_count) {
-
+void create_graph(int width, int height, node*** grid, node** shelves, int shelf_count, edge* edges, int* edge_count) {
+    // alloker selve arrayet.
+    *grid = malloc(sizeof(node*) * height);
+    if (!*grid) {
+        fprintf(stderr, "ERROR: Failed to allocate grid rows GG!\n");
+        exit(EXIT_FAILURE);
+    }
     // 1. Opret noder for alle walkable felter (ikke hylder) Få kigget på dette også
     for (int y = 0; y < height; y++) {
-        (grid)[y] = calloc(width, sizeof(node*));
+        (*grid)[y] = calloc(width, sizeof(node));
+        if (!(*grid)[y]) {
+            fprintf(stderr, "ERROR: Failed to allocate row GG %d!\n", y);
+            // frigør allerede allokerede rækker.
+            for (int i = 0; i < y; i++) free((*grid)[i]);
+            free(*grid);
+            exit(EXIT_FAILURE);
+        }
         for (int x = 0; x < width; x++) {
-            grid[y][x]->y = y;
-            grid[y][x]->x = x;
+            (*grid)[y][x].y = y;
+            (*grid)[y][x].x = x;
         }
     }
 
@@ -204,42 +214,44 @@ void create_graph(int width, int height, node*** grid, node** shelves, int shelf
     // 3. Opret edges for hver node
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-        node* n = grid[y][x];
+                node n = *grid[y][x];
 
-        // Alloker arrays til successorer og predecessorer
-        n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
-        n->predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
-        n->neighbour_count = 0;
+                // Alloker arrays til successorer og predecessorer
+                n.successors    = malloc(sizeof(edge*) * MAX_EDGES);
+                n.predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
+                n.neighbour_count = 0;
 
-        for (int d = 0; d < MAX_EDGES; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
-            int neighbour_x = n->x + dirs[d][0];
-            int neighbour_y = n->y + dirs[d][1];
+                for (int d = 0; d < MAX_EDGES; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
+                    int neighbour_x = n.x + dirs[d][0];
+                    int neighbour_y = n.y + dirs[d][1];
 
-            // Tjek grænser
-            if (neighbour_x < 0 || neighbour_y < 0 || neighbour_x >= width || neighbour_y >= height)
-                continue;
+                    // Tjek grænser
+                    if (neighbour_x < 0 || neighbour_y < 0 || neighbour_x >= width || neighbour_y >= height)
+                        continue;
 
-            node* ng = &grid[neighbour_y][neighbour_x];
+                    node* neighbour_node = &(*grid)[neighbour_y][neighbour_x];
 
 
+                    // Opret edge
+                    edge* e = &edges[(*edge_count)++];
+                    e->source = grid[y][x];
+                    e->dest   = neighbour_node;
+                    e->cost   = (d < 4) ? 1.0 : 1.414; // diagonaler koster √2
 
-            // Opret edge
-            edge* e = malloc(sizeof(edge));
-            e->source = n;
-            e->dest   = ng;
-            e->cost   = (d < 4) ? 1.0 : 1.414; // diagonaler koster √2
-
-            n->successors[n->neighbour_count++] = e;
-            ng->predecessors[ng->neighbour_count++] = e;
+                    n.successors[n.neighbour_count++] = e;
+                    neighbour_node->predecessors[neighbour_node->neighbour_count++] = e;
+                }
+                *grid[y][x] = n;
+            }
         }
-    }
 
 }
+
 // ============================================================
 // freeGraph
 //  Frigør kun arrayet af node-pointers
 // ============================================================
-void freeGraph( node** list, int count)
+void freeGraph( node** list, int count) {
     if (!list) return;
     free(list);
 }

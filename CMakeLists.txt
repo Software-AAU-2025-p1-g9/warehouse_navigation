@@ -7,7 +7,9 @@ include_directories(.)
 
 add_executable(warehouse_navigation
         main.c
-        warehouse.c)
+        warehouse.c
+        "warehouseGenerator.c"
+        "warehouseGenerator.h")
 
 add_executable(algorithm_test
         algorithms.c
