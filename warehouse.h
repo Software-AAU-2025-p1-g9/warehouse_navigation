@@ -35,6 +35,9 @@ struct order {
 
 int node_pos(int size_x, int x, int y);
 
+int min(int n_1, int n_2);
+int max(int n_1, int n_2);
+float f_min(float n_1, float n_2);
 void OrderRandomizer(int Order_Amount, order Order_Array[], node* Pickup[], int Pick_Length, node* Dropoff[], int Drop_Length, node* Shelves[], int Shelve_Length);
 
 #endif

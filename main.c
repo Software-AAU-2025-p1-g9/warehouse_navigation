@@ -6,7 +6,6 @@
 #include "Robot_controller.h"
 #include "warehouseGenerator.h"
 
-
 int main(void) {
 	int width, height, corridor_width;
 	printf("Width of warehouse:\n");
