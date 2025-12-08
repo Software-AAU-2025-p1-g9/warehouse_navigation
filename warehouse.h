@@ -13,14 +13,14 @@ struct node {
     int neighbour_count;
     edge** successors; //array af pointere
     edge** predecessors; //array af pointere
-    double* g;
-    double* h;
-    double* rhs;
+    float* g;
+    float* h;
+    float* rhs;
 };
 
 struct edge {
     node* source;
-    double cost;
+    float cost;
     node* dest;
 };
 
