@@ -40,21 +40,21 @@ node* newNode(int x, int y) { // newnode er lige lidt ligegydig, da den returner
 // ============================================================
 node** createWarehouse(int width, int height) { // ændre den til ikke at være en struct (warehouse)
     if (width <= 0 || height <= 0) {
-        fprintf(stderr, "ERROR: Invalid warehouse size!\n");
+        fprintf(stderr, "ERROR: Invalid warehouse size GG!\n");
         exit(EXIT_FAILURE);
     }
 
     // Alloker grid som array af pointers til rækker
     node** grid= malloc(sizeof(node*) * height);
     if (!grid) {
-        fprintf(stderr, "ERROR: Failed to allocate warehouse grid!\n");
+        fprintf(stderr, "ERROR: Failed to allocate warehouse grid GG!\n");
         exit(EXIT_FAILURE);
     }
 
     for (int y = 0; y < height; y++) {
         grid[y] = calloc(width, sizeof(node)); // calloc nulstiller alt
         if (!grid[y]) {
-            fprintf(stderr, "ERROR: Failed to allocate warehouse row %d!\n", y);
+            fprintf(stderr, "ERROR: Failed to allocate warehouse row GG %d!\n", y);
             for (int i = 0; i < y; i++) free(grid[i]);
             free(grid);
             exit(EXIT_FAILURE);
@@ -81,27 +81,29 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     *pickup_count = 0; // <-- tilføjet fra setPickupPoints
 
     int x = 0;
-    // Første loop: gennem hele bredden, hylde- og korridor-blokke tomme
     while (x < width) {
-        // Hylde-blok (tom)
-        for (int s = 0; s < 2 && x < width; s++, x++) { }
+        // Hylde-blok
+        for (int s = 0; s < 2 && x < width; s++, x++) {
+           *shelf_count += height -2;
+        }
 
-        // Korridor-blok (tom)
-        for (int c = 0; c < corridorWidth && x < width; c++, x++) { }
+        // Korridor-blok
+        for (int c = 0; c < corridorWidth && x < width; c++, x++) {}
     }
 
     // Nu har vi shelf_count klar
     // <-- NYT: malloc shelves-array og error handling
+
     *shelves = (node**) malloc(sizeof(node*) * (*shelf_count));
     if (!*shelves) {
-        fprintf(stderr, "ERROR: Failed to allocate shelves array!\n");
+        fprintf(stderr, "ERROR: Failed to allocate shelves array GG!\n");
         exit(EXIT_FAILURE);
     }
 
     int shelves_in_array = 0; // <-- NYT: start indeks til fyldning af shelves
-
-    // Nyt loop: fyld pickups og opdater costs
     x = 0;
+    // Første loop: gennem hele bredden, hylde- og korridor-blokke tomme
+
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
@@ -120,6 +122,17 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
         }
 
         // Korridor-blok
+        for (int c = 0; c < corridorWidth && x < width; c++, x++) {}
+    }
+
+
+    // Nyt loop: fyld pickups og opdater costs
+    x = 0;
+    while (x < width) {
+        // Hylde-blok (tom)
+        for (int s = 0; s < 2 && x < width; s++, x++) { }
+
+        // Korridor-blok (tom)
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
@@ -145,6 +158,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
             }
         }
     }
+
 
     // Dropoff på tilfældig walkable position i korridor
     int drop_x = corridorWidth; // eksempel: første korridorkolonne
