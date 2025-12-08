@@ -11,3 +11,11 @@ add_executable(warehouse_navigation
         warehouse.c
         warehouse.h
         astar.h)
+        main.c
+        warehouse.c)
+
+add_executable(algorithm_test
+        algorithms.c
+        warehouse.c
+        algorithms.h)
+add_executable(robot_controller Robot_controller.h Robot_controller.c)
