@@ -35,5 +35,5 @@ typedef struct map_data map_data;
 void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, map_data* map_datas);
 void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id);
 void print_g(node* warehouse, int size_x, int size_y, int map_id);
-
+void find_shortest_path(edge*** path, int* path_length, node* start_node, node* goal_node, int map_id);
 #endif //WAREHOUSE_NAVIGATION_ALGORITHMS_H
