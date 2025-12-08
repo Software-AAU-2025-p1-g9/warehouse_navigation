@@ -1,22 +1,23 @@
 #include <math.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include "warehouse.h"
 
 
 //Initializing functions
 void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal_y, int **open_nodes);
-int h_calc(int x, int y, int goal_x, int goal_y);
+float h_calc(int x, int y, int goal_x, int goal_y);
 void add_to_opennodes(int x, int y, int **open_nodes);
 void reset_g(node** nodes, int x_size, int y_size, int map_id);
 //Do not call create_open_nodes without freeing memory after
-void create_open_nodes(int total_area);
+int** create_open_nodes(int total_area);
 
 
 
-void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int map_id, int total_area, int **open_nodes) {
-    create_open_nodes(total_area);
+void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int map_id, int total_area) {
+    int** open_nodes = create_open_nodes(total_area);
 
     //Calculating starting node
     nodes[start_y][start_x].g[map_id] = 0;
@@ -34,13 +35,13 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
 
         //Integer used in while loop for for loop like function
         //lowestf keeps track of the lowest f(n) found
-        int i       = 0,
-            lowestf = INFINITY;
+        int i = 0;
+        float lowestf = INFINITY;
 
         //check open nodes for lowest f(n). Stop loop when the last open_node is found
-        while (open_nodes[i][0] != INFINITY) {
+        while (open_nodes[i][0] != INT_MAX) {
             //Setting the f(n) of the current i position
-            int current_f = (nodes[open_nodes[i][0]][open_nodes[i][1]].g[map_id]+
+            float current_f = (nodes[open_nodes[i][0]][open_nodes[i][1]].g[map_id]+
                              nodes[open_nodes[i][0]][open_nodes[i][1]].h[map_id]);
 
             //Check if y is 0 or above as closed nodes get value of -1 to replace them.
@@ -71,11 +72,11 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
     //For loop to check all succeding nodes (neighbour_count)
     for (int i = 0; i < nodes[y][x].neighbour_count; i++) {
         //Setting temporary int to the calculated new g for the succeding node
-        int new_successor_g = (nodes[y][x].successors[i]->cost + nodes[y][x].g[map_id]);
-        int old_successor_g = nodes[y][x].successors[i]->dest->g[map_id];
+        float new_successor_g = (nodes[y][x].successors[i]->cost + nodes[y][x].g[map_id]);
+        float old_successor_g = nodes[y][x].successors[i]->dest->g[map_id];
 
         //Checking if node is already calculated once and the earlier calculation had a higher g than now
-        if (old_successor_g != INFINITY && nodes[y][x].successors[i]->dest->g[map_id] > temp) {
+        if (old_successor_g != INFINITY && old_successor_g > new_successor_g) {
             //Setting new g of node (no need for new h as this will be the same as last)
             nodes[y][x].successors[i]->dest->g[map_id] = new_successor_g;
             //Adding to open_nodes again
@@ -94,15 +95,15 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
 
 }
 
-int h_calc(int x, int y, int goal_x, int goal_y) {
+float h_calc(int x, int y, int goal_x, int goal_y) {
     //Checking if difference is bigger on the x or y axis to determine how to calculate
     /*Calculating difference of distance on x and y axis and adding this to the pyhtagoran
      *calculation with two times the smallest distance
      */
     if ((goal_x-x) > (goal_y-y)) {
-        return (((goal_x-x)-(goal_y-y))+sqrt((goal_y-y)*(goal_y-y)*2));
+        return (float)((goal_x-x)-(goal_y-y))+sqrtf((float)((goal_y-y)*(goal_y-y)*2));
     } else {
-        return (((goal_y-y)-(goal_x-x))+sqrt((goal_x-x)*(goal_x-x)*2));
+        return (float)((goal_y-y)-(goal_x-x))+sqrtf((float)((goal_x-x)*(goal_x-x)*2));
     }
 }
 
@@ -128,17 +129,25 @@ void reset_g(node** nodes, int x_size, int y_size, int map_id) {
     }
 }
 
-void create_open_nodes(int total_area) {
+int** create_open_nodes(int total_area) {
     //Creating open nodes array of array
     int **open_nodes = malloc(total_area*sizeof(int*));
-
+    if (!open_nodes) {
+        printf("No more memory\n");
+        exit(EXIT_FAILURE);
+    }
 
     //Setting size of array and initializing array of arrays
     for (int i = 0; i < total_area; i++) {
         open_nodes[i] = malloc(2*sizeof(int));
-        for (int j = 0; j < total_area; j++) {
+        if (!open_nodes[i]) {
+            printf("No more memory\n");
+            exit(EXIT_FAILURE);
+        }
+        for (int j = 0; j < 2; j++) {
             open_nodes[i][j] = INT_MAX;
         }
 
     }
+    return open_nodes;
 }
