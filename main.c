@@ -1,46 +1,45 @@
+#include <math.h>
 #include <stdio.h>
 
 
 #include "warehouse.h"
-#include <Robot_controller.h>
+#include "Robot_controller.h"
+#include "warehouseGenerator.h"
 
 
-	int main(void) {
-		int ShelveLength = 3, DropLength = 3,PickLength = 3;
+int main(void) {
+	int width, height, corridor_width;
+	printf("Width of warehouse:\n");
+	scanf("%d", &width);
+	printf("Height of warehouse:\n");
+	scanf("%d", &height);
+	printf("Corridor width:\n");
+	scanf("%d", &corridor_width);
 
-		node* Shelves[ShelveLength];
-		Shelves[0] = &(node){10, 20};
-		Shelves[1] = &(node){30, 40};
-		Shelves[2] = &(node){50, 60};
-		//MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
 
-		node* Pickup[DropLength]; //MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
-		Pickup[0] = &(node){1, 2};
-		Pickup[1] = &(node){3, 4};
-		Pickup[2] = &(node){5, 6};
+	node** warehouse;
 
-		node* Dropoff[PickLength]; //MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
-		Dropoff[0] = &(node){100, 200};
-		Dropoff[1] = &(node){300, 400};
-		Dropoff[2] = &(node){500, 600};
+	edge* edges;
+	int edge_count;
 
-		// VÆRDIERNE OVENOVER FORVENTES FRA LAGER GENERATOR
+	create_graph(width, height, &warehouse, &edges, &edge_count);
+	node** shelves;
+	int shelf_count;
 
-		int Order_Amount;
-		printf("amount of orders");
-		scanf(" %d" , &Order_Amount);
-		order Order_Array[Order_Amount];
-		OrderRandomizer(Order_Amount, Order_Array, Pickup, PickLength,Dropoff, DropLength, Shelves, ShelveLength);
+	int pick_up_count = width * height;
+	node* pick_up_points[pick_up_count];
 
-		// slet for loop i endeligt version nedenunder kun for test.
-		for (int i = 0; i < Order_Amount; i++) {
-			printf("Order %d: node_1 = (%d,%d), node_2 = (%d,%d)\n",
-					i+1,
-				   Order_Array[i].node_1->x,
-				   Order_Array[i].node_1->y,
-				   Order_Array[i].node_2->x,
-				   Order_Array[i].node_2->y);
-		}
-	}
+	int drop_off_count = width * height;
+	node* drop_off_points[drop_off_count];
 
+	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, drop_off_points, &drop_off_count, pick_up_points, &pick_up_count, corridor_width);
+
+	int order_amount;
+	printf("Order amount: \n");
+	scanf("%d", &order_amount);
+	order orders[order_amount];
+	OrderRandomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
+
+	Robot r;
+	r.has_order = 0;
 }

@@ -26,7 +26,7 @@ typedef struct edge edge;
 // ===============================================================
 node** createWarehouse(int width, int height);
 void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count,
-                             node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count,
+                             node** dropoffs, int* dropoff_count, node** pickups, int* pickup_count,
                              int corridorWidth);
 void printWarehouse(node*** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count);
 void freeWarehouse(node*** grid, int width, int height, node** shelves, node** dropoffs, node** pickups);

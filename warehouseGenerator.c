@@ -74,7 +74,7 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
 // generateWarehouseLayout
 //  Fylder lageret med shelves, dropoffs og pickups
 // ============================================================
-void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth)
+void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node** dropoffs, int* dropoff_count, node** pickups, int* pickup_count, int corridorWidth)
 {
     *shelf_count = 0;
     *dropoff_count = 0;
@@ -138,7 +138,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
                 node* n = &grid[y][x];
 
                 // Tilføj til pickups direkte (fra setPickupPoints)
-                (*pickups)[(*pickup_count)++] = n;
+                pickups[(*pickup_count)++] = n;
 
                 // Opdater costs til predecessors og successors
                 for (int i = 0; i < n->neighbour_count; i++) {
@@ -163,7 +163,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     // Dropoff på tilfældig walkable position i korridor
     int drop_x = corridorWidth; // eksempel: første korridorkolonne
     int drop_y = height / 2;
-    (*dropoffs)[(*dropoff_count)++] = &grid[drop_y][drop_x];
+    dropoffs[(*dropoff_count)++] = &grid[drop_y][drop_x];
 }
 // ============================================================
 // printWarehouse
@@ -247,7 +247,12 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
             n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
             n->predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
             n->neighbour_count = 0;
+        }
+    }
 
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            node* n = &(*grid)[y][x];
             for (int d = 0; d < 4; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
                 int neighbour_x = n->x + dirs[d][0];
                 int neighbour_y = n->y + dirs[d][1];
@@ -262,12 +267,12 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
                 edge* edge_1 = &(*edges)[edges_added++];
                 edge_1->source = n;
                 edge_1->dest   = neighbour_node;
-                edge_1->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
+                edge_1->cost   = (d < 2) ? 1.0f : 1.414f; // diagonaler koster √2
 
                 edge* edge_2 = &(*edges)[edges_added++];
                 edge_2->source = neighbour_node;
                 edge_2->dest   = n;
-                edge_2->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
+                edge_2->cost   = (d < 2) ? 1.0f : 1.414f; // diagonaler koster √2
 
                 n->successors[n->neighbour_count] = edge_1;
                 n->predecessors[n->neighbour_count++] = edge_2;

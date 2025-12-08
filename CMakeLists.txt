@@ -8,8 +8,12 @@ include_directories(.)
 add_executable(warehouse_navigation
         main.c
         warehouse.c
-        "warehouseGenerator.c"
-        "warehouseGenerator.h")
+        warehouse.h
+        warehouseGenerator.c
+        warehouseGenerator.h
+        Robot_controller.c
+        Robot_controller.h
+)
 
 add_executable(algorithm_test
         algorithms.c
