@@ -133,7 +133,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
                     if (!e) continue;
                     float dx = (float)(n->x - e->source->x);
                     float dy = (float)(n->y - e->source->y);
-                    e->cost = sqrtf(dx*dx + dy*dy);
+                    e->cost = sqrtf(dx * dx + dy * dy);
                 }
                 for (int i = 0; i < n->neighbour_count; i++) {
                     edge* e = n->successors[i];
@@ -182,14 +182,26 @@ void printWarehouse(node*** grid, int width, int height, node** shelves, int she
 // createGraphFromWarehouse ( create_graph=
 //  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
 // ============================================================
-void create_graph(int width, int height, node*** grid, node** shelves, int shelf_count, edge* edges, int* edge_count) {
+void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count) {
+    int central_edge_count = (width - 2) * (height - 2) * 8;
+    int edge_edge_count = (width - 2) * 2 * 5 + (height - 2) * 2 * 5;
+    int corner_edge_count = 4 * 3;
+    *edge_count = central_edge_count + edge_edge_count + corner_edge_count;
+    *edges = malloc(sizeof(edge) * *edge_count);
+    if (!*edges) {
+        fprintf(stderr, "ERROR: Failed to allocate edges GG!\n");
+        exit(EXIT_FAILURE);
+    }
+
+
     // alloker selve arrayet.
     *grid = malloc(sizeof(node*) * height);
     if (!*grid) {
         fprintf(stderr, "ERROR: Failed to allocate grid rows GG!\n");
         exit(EXIT_FAILURE);
     }
-    // 1. Opret noder for alle walkable felter (ikke hylder) Få kigget på dette også
+
+    // 1. Opret noder for alle felter. Få kigget på dette også
     for (int y = 0; y < height; y++) {
         (*grid)[y] = calloc(width, sizeof(node));
         if (!(*grid)[y]) {
@@ -205,55 +217,51 @@ void create_graph(int width, int height, node*** grid, node** shelves, int shelf
         }
     }
 
-    // 2. Retninger for 8 naboer (ortogonale + diagonale)
-    int dirs[8][2] = {
-        { 0,-1}, { 0, 1}, {-1, 0}, { 1, 0},  // op, ned, venstre, højre
-        {-1,-1}, {-1, 1}, { 1,-1}, { 1, 1}   // diagonaler
+    // 2. Retninger for 4 naboer (ortogonale + diagonale). For at det samme par af nodes ikke skal bruges to gange, er der kun 4 retninger
+    int dirs[4][2] = {
+        { 0, 1}, { 1, 0},  // ned, og højre
+        { 1,-1}, { 1, 1}   // diagonaler
     };
 
+    int edges_added = 0;
     // 3. Opret edges for hver node
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                node n = *grid[y][x];
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            node* n = &(*grid)[y][x];
 
-                // Alloker arrays til successorer og predecessorer
-                n.successors    = malloc(sizeof(edge*) * MAX_EDGES);
-                n.predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
-                n.neighbour_count = 0;
+            // Alloker arrays til successorer og predecessorer
+            n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
+            n->predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
+            n->neighbour_count = 0;
 
-                for (int d = 0; d < MAX_EDGES; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
-                    int neighbour_x = n.x + dirs[d][0];
-                    int neighbour_y = n.y + dirs[d][1];
+            for (int d = 0; d < 4; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
+                int neighbour_x = n->x + dirs[d][0];
+                int neighbour_y = n->y + dirs[d][1];
 
-                    // Tjek grænser
-                    if (neighbour_x < 0 || neighbour_y < 0 || neighbour_x >= width || neighbour_y >= height)
-                        continue;
+                // Tjek grænser
+                if (neighbour_x < 0 || neighbour_y < 0 || neighbour_x >= width || neighbour_y >= height)
+                    continue;
 
-                    node* neighbour_node = &(*grid)[neighbour_y][neighbour_x];
+                node* neighbour_node = &(*grid)[neighbour_y][neighbour_x];
 
+                // Opret edges
+                edge* edge_1 = &(*edges)[edges_added++];
+                edge_1->source = n;
+                edge_1->dest   = neighbour_node;
+                edge_1->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
 
-                    // Opret edge
-                    edge* e = &edges[(*edge_count)++];
-                    e->source = grid[y][x];
-                    e->dest   = neighbour_node;
-                    e->cost   = (d < 4) ? 1.0 : 1.414; // diagonaler koster √2
+                edge* edge_2 = &(*edges)[edges_added++];
+                edge_2->source = neighbour_node;
+                edge_2->dest   = n;
+                edge_2->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
 
-                    n.successors[n.neighbour_count++] = e;
-                    neighbour_node->predecessors[neighbour_node->neighbour_count++] = e;
-                }
-                *grid[y][x] = n;
+                n->successors[n->neighbour_count] = edge_1;
+                n->predecessors[n->neighbour_count++] = edge_2;
+                neighbour_node->successors[neighbour_node->neighbour_count] = edge_2;
+                neighbour_node->predecessors[neighbour_node->neighbour_count++] = edge_1;
             }
         }
-
-}
-
-// ============================================================
-// freeGraph
-//  Frigør kun arrayet af node-pointers
-// ============================================================
-void freeGraph( node** list, int count) {
-    if (!list) return;
-    free(list);
+    }
 }
 
 // ============================================================
