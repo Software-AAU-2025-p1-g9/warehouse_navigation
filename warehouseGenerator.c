@@ -228,6 +228,13 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
         for (int x = 0; x < width; x++) {
             (*grid)[y][x].y = y;
             (*grid)[y][x].x = x;
+            (*grid)[y][x].g = malloc(width * height * sizeof(float));
+            (*grid)[y][x].h = malloc(width * height * sizeof(float));
+            (*grid)[y][x].rhs = malloc(width * height * sizeof(float));
+            if (!(*grid)[y][x].g || !(*grid)[y][x].h || !(*grid)[y][x].rhs) {
+                fprintf(stderr, "ERROR: Failed to allocate g, h and rhs!\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 

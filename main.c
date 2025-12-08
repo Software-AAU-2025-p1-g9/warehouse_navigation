@@ -39,7 +39,11 @@ int main(void) {
 	scanf("%d", &order_amount);
 	order orders[order_amount];
 	OrderRandomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
+	printf("Første odre starter i punktet (%d, %d)", orders[0].node_1->x, orders[0].node_1->y); //Debug
+
 
 	Robot r;
 	r.has_order = 0;
+	r.goal_2 = &warehouse[0][0];
+	assign_robot_path(&r, orders[0], warehouse, node_pos(width, r.goal_2->x, r.goal_2->y), height, width);
 }

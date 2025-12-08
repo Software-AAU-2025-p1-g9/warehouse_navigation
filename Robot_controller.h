@@ -16,4 +16,4 @@ typedef struct {
 }Robot;
 
 void move_robot(Robot* r, float* global_time);
-void assign_robot_path(Robot* r, order o);
+void assign_robot_path(Robot* r, order o, node** warehouse, int map_id, int height, int width);

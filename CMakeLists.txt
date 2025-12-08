@@ -5,12 +5,15 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(.)
 
-add_executable(warehouse_navigation
+add_executable(a_star_test
         astar.c
         main.c
         warehouse.c
         warehouse.h
-        astar.h)
+        astar.h
+)
+
+add_executable(warehouse_navigation
         main.c
         warehouse.c
         warehouse.h
@@ -18,6 +21,10 @@ add_executable(warehouse_navigation
         warehouseGenerator.h
         Robot_controller.c
         Robot_controller.h
+        astar.h
+        astar.c
+        algorithms.h
+        algorithms.c
 )
 
 add_executable(algorithm_test

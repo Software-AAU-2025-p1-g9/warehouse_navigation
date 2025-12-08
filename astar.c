@@ -10,7 +10,6 @@
 void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal_y, int **open_nodes);
 float h_calc(int x, int y, int goal_x, int goal_y);
 void add_to_opennodes(int x, int y, int **open_nodes);
-void reset_g(node** nodes, int x_size, int y_size, int map_id);
 //Do not call create_open_nodes without freeing memory after
 int** create_open_nodes(int total_area);
 
@@ -28,8 +27,16 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
     int temp_x = start_x,
         temp_y = start_y;
 
+    int step = 0; //Debug
     //Check all nodes with lowest f(n) until the open node with lowest f(n) is the goal node
     while (nodes[goal_y][goal_x].g[map_id] == INFINITY) {
+        //Debug
+        printf("Step %d. open_nodes:\n", step);
+        for (int i = 0; i < total_area; i++) {
+            if (open_nodes[i][0] != INT_MAX) printf("(%d, %d)\n", open_nodes[i][0], open_nodes[i][1]);
+        }
+        step++;
+
         //Calculating succeding nodes from temp y & x
         calc_succeding(nodes, temp_x, temp_y, map_id, goal_x, goal_y, open_nodes);
 
@@ -59,6 +66,8 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
         }
     }
 
+    printf("Jeg nåede ud af while-loopet af en eller anden grund\n"); //Debug
+
     //Free memory from inner arrays
     for (int i = 0; i < total_area; i++) {
         free(open_nodes[i]);
@@ -72,7 +81,7 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
     //For loop to check all succeding nodes (neighbour_count)
     for (int i = 0; i < nodes[y][x].neighbour_count; i++) {
         //Setting temporary int to the calculated new g for the succeding node
-        float new_successor_g = (nodes[y][x].successors[i]->cost + nodes[y][x].g[map_id]);
+        float new_successor_g = nodes[y][x].successors[i]->cost + nodes[y][x].g[map_id];
         float old_successor_g = nodes[y][x].successors[i]->dest->g[map_id];
 
         //Checking if node is already calculated once and the earlier calculation had a higher g than now
@@ -80,7 +89,8 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
             //Setting new g of node (no need for new h as this will be the same as last)
             nodes[y][x].successors[i]->dest->g[map_id] = new_successor_g;
             //Adding to open_nodes again
-            add_to_opennodes(x,y, open_nodes);
+
+            add_to_opennodes(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, open_nodes);
 
         //Checking if node is not calculated. If so calculate it
         } else if (old_successor_g == INFINITY) {
@@ -88,7 +98,7 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
             nodes[y][x].successors[i]->dest->g[map_id] = new_successor_g;
             nodes[y][x].successors[i]->dest->h[map_id] =
             h_calc(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, goal_x, goal_y);
-            add_to_opennodes(x, y, open_nodes);
+            add_to_opennodes(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, open_nodes);
         }
 
     }
