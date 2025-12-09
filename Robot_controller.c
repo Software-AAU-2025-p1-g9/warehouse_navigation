@@ -10,21 +10,13 @@
 #include "algorithms.h"
 
 
-void assign_robot_path(Robot* r, order o, node** warehouse, int map_id, int height, int width) {
-    int current_x = r->goal_2->x;
-    int current_y = r->goal_2->y;
-    node* current_node = r->goal_2;
+void assign_robot_path(Robot* r, node** warehouse, int map_id, int height, int width, int goal_x, int goal_y) {
+    int current_x = 0;
+    int current_y = 0;
 
-    r->goal_1=o.node_1;
-    r->goal_2=o.node_2;
-
-    reset_g(warehouse, width, height, node_pos(width, current_x, current_y));
-    printf("reset_g virker\n"); //Debug
-    astar(warehouse, current_x, current_y, r->goal_1->x, r->goal_1->y, map_id, height * width);
-    printf("A* virker\n"); //Debug
-    find_shortest_path(&r->path, &r->path_length, current_node, r->goal_1, map_id);
-    printf("find_shortest_path virker?\n"); //Debug
-
+    reset_g(warehouse, width, height, map_id);
+    astar(warehouse, 0, 0, 3, 3, map_id, (height*width));
+    find_shortest_path(&r->path, &r->path_length, r->current_node, &warehouse[goal_y][goal_x], map_id);
 
     r->has_order = 1;
     r->path_pos = 0;

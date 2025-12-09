@@ -31,20 +31,17 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
     //Check all nodes with lowest f(n) until the open node with lowest f(n) is the goal node
     while (nodes[goal_y][goal_x].g[map_id] == INFINITY) {
         //Debug
-        printf("Step %d. open_nodes:\n", step);
-        for (int i = 0; i < total_area; i++) {
-            if (open_nodes[i][0] != INT_MAX) printf("(%d, %d)\n", open_nodes[i][0], open_nodes[i][1]);
-        }
+        printf("\nCurrent node x%d y%d \n", temp_x, temp_y);
         step++;
-
         //Calculating succeding nodes from temp y & x
         calc_succeding(nodes, temp_x, temp_y, map_id, goal_x, goal_y, open_nodes);
 
-        //Integer used in while loop for for loop like function
+        //Integer used in while loop for for-loop like function
         //lowestf keeps track of the lowest f(n) found
         int i = 0;
         float lowestf = INFINITY;
 
+        int open_nodes_tracker = 0;
         //check open nodes for lowest f(n). Stop loop when the last open_node is found
         while (open_nodes[i][0] != INT_MAX) {
             //Setting the f(n) of the current i position
@@ -58,15 +55,20 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
                 if (current_f < lowestf) {
                     temp_y = open_nodes[i][0];
                     temp_x = open_nodes[i][1];
+                    open_nodes_tracker = i;
                     lowestf = current_f;
                 }
             }
             //Progress to next open node
             i++;
         }
+        open_nodes[open_nodes_tracker][0] = -1;
+        open_nodes[open_nodes_tracker][1] = -1;
     }
 
-    printf("Jeg nåede ud af while-loopet af en eller anden grund\n"); //Debug
+    //Debug
+    printf("\nJeg nåede ud af while-loopet af en eller anden grund\n");
+    printf("For mål er g = %f \n", nodes[goal_y][goal_x].g[map_id]);
 
     //Free memory from inner arrays
     for (int i = 0; i < total_area; i++) {
@@ -77,9 +79,9 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
 }
 
 void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal_y, int **open_nodes) {
-
     //For loop to check all succeding nodes (neighbour_count)
     for (int i = 0; i < nodes[y][x].neighbour_count; i++) {
+
         //Setting temporary int to the calculated new g for the succeding node
         float new_successor_g = nodes[y][x].successors[i]->cost + nodes[y][x].g[map_id];
         float old_successor_g = nodes[y][x].successors[i]->dest->g[map_id];
@@ -120,7 +122,16 @@ float h_calc(int x, int y, int goal_x, int goal_y) {
 void add_to_opennodes(int x, int y, int **open_nodes) {
     //initialising i used in later calculation
     int i = 0;
+    while (open_nodes[i][0] != INT_MAX) {
+        if (open_nodes[i][0] == y && open_nodes[i][1] == x) {
+            open_nodes[i][0] = -1;
+            open_nodes[i][1] = -1;
+        }
+        i++;
+    }
 
+
+    i = 0;
     //Setting i to the first open postition in the open_nodes array
     while (open_nodes[i][0] != INT_MAX && open_nodes[i][0] != -1) {
         i++;
