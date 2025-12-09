@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "warehouse.h"
+#include "worker.h"
 #include <time.h>
 
 #define num_workers 5
@@ -41,11 +41,16 @@ int main(void) {
     // Give each worker a random A → B → C → A loop route
     for (int i = 0; i < num_workers; i++) {
         workers[i].route = NULL;
+        workers[i].route_length = 0;
+        workers[i].position = 0;
+    }
+
+    for (int i = 0; i < NUM_TIME; i++) {
         generate_simple_loop_route(&workers[i], size_y, size_x, nodes);
     }
 
     for (int i = 0; i < num_workers; i++) {
-        printf("Workers route (length = %d):\n", workers[i].route_length);
+        printf("Workers route (length = %d):\n", i, workers[i].route_length);
 
         for (int s = 0; s < workers[i].route_length; s++) {
             edge* e = workers[i].route[s];
@@ -55,14 +60,23 @@ int main(void) {
                     s,
                     e->source->x, e->source->y,
                     e->dest->x, e->dest->y,
-                    e->cost,
-                    workers[i].stay_time[s]);
+                    e->cost);
             } else {
                 printf(" There's no more edges, stay time is %.2f\n",
                     s, workers[i].route[s]);
             }
+            printf("Stay time at stops:  ");
+            for (int k = 0; k < NUM_TIME; k++) {
+                printf("%.2f ", workers[i].stay_time[k]);
+            }
+            printf("\n");
+        }
+        for (int i = 0; i < NUM_TIME; i++) {
+            free(workers[i].route);
+            workers[i].route = NULL;
         }
     }
+
     printf("\n");
     return 0;
 }

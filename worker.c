@@ -1,4 +1,4 @@
-#include "warehouse.h"
+#include "worker.h"
 #include <stdlib.h>
 #include <time.h>
 
@@ -11,8 +11,8 @@ int node_pos(int size_x, int x, int y) {
  * and returns a pointer if found otherwise returns nothing/NULL */
 edge* find_edge(node* from, node* to) {
     if (from == NULL || from->successors == NULL) {
-            return NULL;
-        }
+        return NULL;
+    }
 
     /* Looks at all neighbouring edges
      * And if one of the edges goes to the correct destination, it will return that edge */
@@ -24,6 +24,11 @@ edge* find_edge(node* from, node* to) {
     }
 
     return NULL;
+}
+
+void find_shortest_path(edge*** path, int* path_length, node* start_node, node* goal_node, int map_id) {
+    *path_length = 0;
+    find_shortest_sub_path(path, path_length, 0, start_node, goal_node, map_id);
 }
 
 /* This function generate a route using edges
@@ -48,21 +53,40 @@ void generate_simple_loop_route(worker* w,
     node* C = &nodes[cy][cx];
 
     // Will find edges between nodes
-    edge* AB = find_edge(A, B);
-    edge* BC = find_edge(B, C);
-    edge* CA = find_edge(C, A);
+    edge** path_AB = NULL;
+    edge** path_BC = NULL;
+    edge** path_CA = NULL;
 
-    w->route_length = 3;
+    int len_AB = 0;
+    int len_BC = 0;
+    int len_CA = 0;
+
+    int total_edges = len_AB + len_BC + len_CA;
+    w->route_length = total_edges;
 
     w->route = malloc(w->route_length * sizeof(edge*));
+    if (w->route == NULL) {
+        w->route_length = 0;
+        return;
+    }
 
-    /* Store the edges in the "workers" route
-    *  if any edges return NULL, these edges is not connected */
-    w->route[0] = AB;
-    w->route[1] = BC;
-    w->route[2] = CA;
+    int idx = 0;
 
-    for (int i = 0; i < NUM_EDGES; i++) {
+    for (int i = 0; i < len_AB; i++) {
+        w->route[idx++] = path_AB[i];
+    }
+
+    for (int i = 0; i < len_BC; i++) {
+        w->route[idx++] = path_BC[i];
+    }
+
+    for (int i = 0; i < len_CA; i++) {
+        w->route[idx++] = path_CA[i];
+    }
+
+
+    // Stay time
+    for (int i = 0; i < NUM_TIME; i++) {
         w->stay_time[i] = (float)((rand() % 5) + 1);
     }
 }

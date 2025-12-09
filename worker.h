@@ -1,6 +1,7 @@
-#ifndef WAREHOUSE_H
-#define WAREHOUSE_H
-#define NUM_EDGES 4
+#ifndef WORKER_H
+#define WORKER_H
+#define NUM_TIME 4
+
 
 struct edge;
 struct node;
@@ -11,7 +12,7 @@ typedef struct node node;
 typedef struct order order;
 typedef struct {
     edge** route;
-    float stay_time[NUM_EDGES];
+    float stay_time[NUM_TIME];
     int route_length;
     int position;
 } worker;
@@ -34,8 +35,8 @@ struct edge {
 };
 
 struct order {
- node node_1;
- node node_2;
+    node node_1;
+    node node_2;
 
 };
 // Converts (x, y) grid coordinates into a single integer
@@ -48,5 +49,7 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x,
 
 // Find edges that goes from "from" -> "to"
 edge* find_edge(node* from, node* to);
+
+void find_shortest_path(edge*** path, int* path_length, node* start_node, node* goal_node, int map_id);
 
 #endif

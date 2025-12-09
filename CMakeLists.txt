@@ -7,6 +7,6 @@ include_directories(.)
 
 add_executable(warehouse_navigation
         main.c
-        warehouse.c
-        warehouse.h
+        worker.c
+        worker.h
         worker_simulation.c)
