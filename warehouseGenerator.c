@@ -6,69 +6,6 @@
 #include "warehouse.h"
 #include <stdio.h>
 #include <stdlib.h>
-// -----------------------------------------
-// laver fast array til alle modes og tæller til hvor mange, der er lavet.
-
-
-// ============================================================
-// Hjælpefunktion: Opret en ny graf-node
-// ============================================================
-node* newNode(int x, int y) { // newnode er lige lidt ligegydig, da den returnerer
-    // Vi allokerer direkte et node-array og sætter alt til 0/NULL med calloc
-    node* n = calloc(1, sizeof(node)); // calloc sætter alle felter til 0/NULL
-    if (!n) return NULL;
-
-    // Felterne x og y er egentlig ligegyldige, men vi sætter dem for reference
-    n->x = x;
-    n->y = y;
-
-    // Resten nulstilles af calloc, men vi kan også eksplicit sætte dem
-    n->neighbour_count = 0;
-    n->successors = NULL;
-    n->predecessors = NULL;
-    n->g = NULL;
-    n->h = NULL;
-    n->rhs = NULL;
-
-    return n;
-}
-
-
-// ============================================================
-// createWarehouse
-//  Opretter lagerets grid af NodeGrid.
-// ============================================================
-node** createWarehouse(int width, int height) { // ændre den til ikke at være en struct (warehouse)
-    if (width <= 0 || height <= 0) {
-        fprintf(stderr, "ERROR: Invalid warehouse size GG!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Alloker grid som array af pointers til rækker
-    node** grid= malloc(sizeof(node*) * height);
-    if (!grid) {
-        fprintf(stderr, "ERROR: Failed to allocate warehouse grid GG!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    for (int y = 0; y < height; y++) {
-        grid[y] = calloc(width, sizeof(node)); // calloc nulstiller alt
-        if (!grid[y]) {
-            fprintf(stderr, "ERROR: Failed to allocate warehouse row GG %d!\n", y);
-            for (int i = 0; i < y; i++) free(grid[i]);
-            free(grid);
-            exit(EXIT_FAILURE);
-        }
-
-        for (int x = 0; x < width; x++) {
-            grid[y][x].x = x;
-            grid[y][x].y = y;
-
-        }
-    }
-
-    return grid; // Shelves/dropoffs/pickups arrays allokeres senere, når vi kender antal
-}
 
 // ============================================================
 // generateWarehouseLayout
@@ -94,7 +31,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     // Nu har vi shelf_count klar
     // <-- NYT: malloc shelves-array og error handling
 
-    *shelves = (node**) malloc(sizeof(node*) * (*shelf_count));
+    *shelves = (node**) malloc(sizeof(node*) * *shelf_count);
     if (!*shelves) {
         fprintf(stderr, "ERROR: Failed to allocate shelves array GG!\n");
         exit(EXIT_FAILURE);
@@ -169,6 +106,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
 // printWarehouse
 //  Printer lager med symboler: S, D, P, .
 // ============================================================
+/*
 void printWarehouse(node*** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -191,6 +129,7 @@ void printWarehouse(node*** grid, int width, int height, node** shelves, int she
         printf("\n");
     }
 }
+*/
 
 // ============================================================
 // createGraphFromWarehouse ( create_graph=
@@ -231,6 +170,7 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
             (*grid)[y][x].g = malloc(width * height * sizeof(float));
             (*grid)[y][x].h = malloc(width * height * sizeof(float));
             (*grid)[y][x].rhs = malloc(width * height * sizeof(float));
+
             if (!(*grid)[y][x].g || !(*grid)[y][x].h || !(*grid)[y][x].rhs) {
                 fprintf(stderr, "ERROR: Failed to allocate g, h and rhs!\n");
                 exit(EXIT_FAILURE);
