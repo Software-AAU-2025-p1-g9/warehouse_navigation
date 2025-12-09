@@ -68,7 +68,7 @@ int main(void) {
 		}
 		move_robot(&r, &global_time);
 		if (r.current_node == r.goal_1) {
-			assign_robot_path_lpa(&r, warehouse, width, height, r.goal_2, map_datas);
+			assign_robot_path(&r, warehouse, node_pos(width, r.current_node->x,r.current_node->y), height, width, r.goal_1->x, r.goal_1->y);
 		}
 		if (r.current_node == r.goal_2) {
 			r.has_order = 0;
