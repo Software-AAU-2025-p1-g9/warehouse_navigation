@@ -40,19 +40,27 @@ int main(void) {
 
     // Give each worker a random A → B → C → A loop route
     for (int i = 0; i < num_workers; i++) {
+        workers[i].route = NULL;
         generate_simple_loop_route(&workers[i], size_y, size_x, nodes);
-        calculate_times(&workers[i]);
     }
 
     for (int i = 0; i < num_workers; i++) {
         printf("Workers route (length = %d):\n", workers[i].route_length);
 
         for (int s = 0; s < workers[i].route_length; s++) {
-            printf("Step %d: (%d, %d), stay time is %.2f\n",
-                s,
-                workers[i].route[s]->x,
-                workers[i].route[s]->y,
-                workers[i].stay_time[s]);
+            edge* e = workers[i].route[s];
+
+            if (e != NULL) {
+                printf("Step %d: (%d, %d) -> (%d, %d), cost = %.2f, stay time is %.2f\n",
+                    s,
+                    e->source->x, e->source->y,
+                    e->dest->x, e->dest->y,
+                    e->cost,
+                    workers[i].stay_time[s]);
+            } else {
+                printf(" There's no more edges, stay time is %.2f\n",
+                    s, workers[i].route[s]);
+            }
         }
     }
     printf("\n");

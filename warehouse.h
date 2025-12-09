@@ -1,6 +1,6 @@
 #ifndef WAREHOUSE_H
 #define WAREHOUSE_H
-#define MAX_ROUTE 1000
+#define NUM_EDGES 4
 
 struct edge;
 struct node;
@@ -10,8 +10,8 @@ typedef struct edge edge;
 typedef struct node node;
 typedef struct order order;
 typedef struct {
-    node* route[MAX_ROUTE];
-    float stay_time[MAX_ROUTE];
+    edge** route;
+    float stay_time[NUM_EDGES];
     int route_length;
     int position;
 } worker;
@@ -48,10 +48,5 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x,
 
 // Find edges that goes from "from" -> "to"
 edge* find_edge(node* from, node* to);
-
-/* This function calculate for how long each step takes for these "workers"
- * We look up the corresponding edge and use its stay_time function as the cost */
-void calculate_times(worker* w);
-
 
 #endif

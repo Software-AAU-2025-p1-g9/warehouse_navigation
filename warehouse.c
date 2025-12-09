@@ -26,49 +26,11 @@ edge* find_edge(node* from, node* to) {
     return NULL;
 }
 
-/* This function calculate for how long each step takes for these "workers"
- * We look up the corresponding edge and use its stay_time function as the cost */
-void calculate_times (worker* w) {
-    edge edge_path[MAX_ROUTE];
-    int edge_count = 0;
-
-    // If there's only 1 node or less, nothing can be calculated
-    if (w->route_length <= 1) {
-        if (w->route_length == 1) {
-            w->stay_time[0] = 0.0f;
-        }
-        return;
-    }
-
-    /* This function will loop over each step
-     * as well as find an edge and connecting the 2 nodes */
-    for (int i = 0; i < w->route_length - 1; i++) {
-        node* from = w->route[i];
-        node* to = w->route[i + 1];
-
-        edge* e = find_edge(from, to);
-
-        /* Store the edge in an array
-         * and use the cost of the edges as the movement time
-         * but if no edges is found we assign the cost to be 0 */
-        if (e != NULL) {
-            edge_path[edge_count++] = *e;
-            w->stay_time[i] = (float)e->cost;
-        } else {
-            w->stay_time[i] = 0.0f;
-        }
-    }
-
-    // Last node won't have any edges
-    w->stay_time[w->route_length -1] = 0.0f;
-}
-
-/* This function generate a loop route
+/* This function generate a route using edges
  * and create a test route for these "workers" */
-void generate_simple_loop_route(worker* w, int size_y, int size_x,
+void generate_simple_loop_route(worker* w,
+                                int size_y, int size_x,
                                 node nodes[size_y][size_x]) {
-    // Reset these "workers" stats
-    w->route_length = 0;
     w->position = 0;
 
     // Picks 3 random coordinates
@@ -85,17 +47,22 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x,
     node* B = &nodes[by][bx];
     node* C = &nodes[cy][cx];
 
-    // Step 0 from A
-    w->route[0] = A;
+    // Will find edges between nodes
+    edge* AB = find_edge(A, B);
+    edge* BC = find_edge(B, C);
+    edge* CA = find_edge(C, A);
 
-    // Step 1 from A to B
-    w->route[1] = B;
+    w->route_length = 3;
 
-    // Step 2 from B to C
-    w->route[2] = C;
+    w->route = malloc(w->route_length * sizeof(edge*));
 
-    // Step 3 from C back to A
-    w->route[3] = A;
+    /* Store the edges in the "workers" route
+    *  if any edges return NULL, these edges is not connected */
+    w->route[0] = AB;
+    w->route[1] = BC;
+    w->route[2] = CA;
 
-    w->route_length = 4;
+    for (int i = 0; i < NUM_EDGES; i++) {
+        w->stay_time[i] = (float)((rand() % 5) + 1);
+    }
 }
