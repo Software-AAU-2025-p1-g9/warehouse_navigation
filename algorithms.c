@@ -344,7 +344,6 @@ void find_shortest_sub_path(edge*** path, int* path_length, int pos, node* start
         printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(");
         exit(EXIT_FAILURE);
     }
-    printf("Bedste nabo for punkt (%d, %d) er (%d, %d) med en cost på %01.4lf\n", goal_node->x, goal_node->y, best_neighbour_edge->source->x, best_neighbour_edge->source->y, best_neighbour_edge->cost);
     //Her er path_length lig med pos
     (*path_length)++;
     find_shortest_sub_path(path, path_length, pos + 1, start_node, best_neighbour_edge->source, map_id);
