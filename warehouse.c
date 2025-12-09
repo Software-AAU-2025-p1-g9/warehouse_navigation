@@ -21,6 +21,11 @@ int max(int n_1, int n_2) {
 float f_min(float n_1, float n_2) {
     return n_1 < n_2 ? n_1 : n_2;
 }
+
+int f_eq(float n_1, float n_2) {
+    return n_1 - 0.00001 < n_2 && n_1 + 0.00001 > n_2;
+}
+
 void OrderRandomizer(int Order_Amount, order Order_Array[], node* Pickup[], int Pick_Length, node* Dropoff[], int Drop_Length, node* Shelves[], int Shelve_Length){
 
     unsigned int seed = (unsigned int)(time(NULL) ^ (uintptr_t)&seed); //mostly unpredictable seed for randomization

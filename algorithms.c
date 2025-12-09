@@ -292,12 +292,12 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
  * @param size_y int
  * @param map_id id for det kort der arbejdes i
  */
-void print_g(node* warehouse, int size_x, int size_y, int map_id) {
+void print_g(node** warehouse, int size_x, int size_y, int map_id) {
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
-            float node_value = warehouse[node_pos(size_x, x, y)].g[map_id];
+            float node_value = warehouse[y][x].g[map_id];
             if (node_value == INFINITY) {
-                printf("INF ");
+                printf("INF  ");
             }
             else {
                 printf("%04.1lf ", node_value);
@@ -344,6 +344,7 @@ void find_shortest_sub_path(edge*** path, int* path_length, int pos, node* start
         printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(");
         exit(EXIT_FAILURE);
     }
+    printf("Bedste nabo for punkt (%d, %d) er (%d, %d) med en cost på %01.4lf\n", goal_node->x, goal_node->y, best_neighbour_edge->source->x, best_neighbour_edge->source->y, best_neighbour_edge->cost);
     //Her er path_length lig med pos
     (*path_length)++;
     find_shortest_sub_path(path, path_length, pos + 1, start_node, best_neighbour_edge->source, map_id);
@@ -362,11 +363,15 @@ edge* lowest_g_predecessor(node* n, int map_id) {
     edge* best_neighbour_edge = NULL;
     float best_neighbour_g = INFINITY;
     for (int i = 0; i < n->neighbour_count; i++) {
-        float neighbour_g = n->predecessors[i]->source->g[map_id];
-        if (neighbour_g < best_neighbour_g && neighbour_g < n->g[map_id]) {
-            best_neighbour_g = neighbour_g;
-            best_neighbour_edge = n->predecessors[i];
+        edge* neighbour_edge = n->predecessors[i];
+        float neighbour_g = neighbour_edge->source->g[map_id];
+        if (neighbour_g < best_neighbour_g && f_eq(n->g[map_id] - neighbour_g, neighbour_edge->cost)) {
+            best_neighbour_edge = neighbour_edge;
+            best_neighbour_g = neighbour_edge->source->g[map_id];
         }
+    }
+    if (best_neighbour_edge != NULL && best_neighbour_g == INFINITY) {
+        printf("Der blev valgt en uendelig edge");
     }
     return best_neighbour_edge;
 }
