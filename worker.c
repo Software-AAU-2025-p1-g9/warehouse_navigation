@@ -1,11 +1,7 @@
 #include "worker.h"
 #include <stdlib.h>
 #include <time.h>
-
-// Converts (x, y) grid coordinates into a single integer
-int node_pos(int size_x, int x, int y) {
-    return y * size_x + x;
-}
+#include "algorithms.h"
 
 /* Find edges that goes from "from" -> "to"
  * and returns a pointer if found otherwise returns nothing/NULL */
@@ -24,11 +20,6 @@ edge* find_edge(node* from, node* to) {
     }
 
     return NULL;
-}
-
-void find_shortest_path(edge*** path, int* path_length, node* start_node, node* goal_node, int map_id) {
-    *path_length = 0;
-    find_shortest_sub_path(path, path_length, 0, start_node, goal_node, map_id);
 }
 
 /* This function generate a route using edges
@@ -61,31 +52,28 @@ void generate_simple_loop_route(worker* w,
     int len_BC = 0;
     int len_CA = 0;
 
+    find_shortest_path(&path_AB, &len_AB, A, B, 0);
+    find_shortest_path(&path_BC, &len_BC, B, C, 0);
+    find_shortest_path(&path_CA, &len_CA, C, A, 0);
+
     int total_edges = len_AB + len_BC + len_CA;
     w->route_length = total_edges;
 
-    w->route = malloc(w->route_length * sizeof(edge*));
+    w->route = malloc((size_t)w->route_length * sizeof(edge*));
     if (w->route == NULL) {
         w->route_length = 0;
         return;
     }
 
     int idx = 0;
+    for (int i = 0; i < len_AB; i++) w->route[idx++] = path_AB[i];
+    for (int i = 0; i < len_BC; i++) w->route[idx++] = path_BC[i];
+    for (int i = 0; i < len_CA; i++) w->route[idx++] = path_CA[i];
 
-    for (int i = 0; i < len_AB; i++) {
-        w->route[idx++] = path_AB[i];
-    }
+    free(path_AB);
+    free(path_BC);
+    free(path_CA);
 
-    for (int i = 0; i < len_BC; i++) {
-        w->route[idx++] = path_BC[i];
-    }
-
-    for (int i = 0; i < len_CA; i++) {
-        w->route[idx++] = path_CA[i];
-    }
-
-
-    // Stay time
     for (int i = 0; i < NUM_TIME; i++) {
         w->stay_time[i] = (float)((rand() % 5) + 1);
     }
