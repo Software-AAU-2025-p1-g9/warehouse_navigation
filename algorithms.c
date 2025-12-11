@@ -80,7 +80,7 @@ int is_key_smaller(key k, key l) {
 void insert_to_priority_queue(node* n, key k, priority_queue* queue) {
     priority_queue_element* new_element = (priority_queue_element*) malloc(sizeof(priority_queue_element));
     if (new_element == NULL) {
-        printf("Out of memory :(");
+        printf("Out of memory :(\n");
         exit(EXIT_FAILURE);
     }
     new_element->node = n;
@@ -242,7 +242,7 @@ void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, 
  */
 void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
     if (map_datas[map_id].last_variable_node == NULL) {
-        printf("kortet med map_id %d er ikke initialiseret", map_id);
+        printf("kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
@@ -352,7 +352,7 @@ void update_node_d_star_lite(node* n, node* start, node* goal, float key_modifie
  */
 void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
     if (map_datas[map_id].last_variable_node == NULL) {
-        printf("kortet med map_id %d er ikke initialiseret", map_id);
+        printf("kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
@@ -375,16 +375,16 @@ void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map
         else if (first_node->g[map_id] > first_node->rhs[map_id]) {
             first_node->g[map_id] = first_node->rhs[map_id];
             for (int i = 0; i < first_node->neighbour_count; i++) {
-                update_node_lpa_star(first_node->predecessors[i]->dest, start_node, goal_node, key_modifier, queue, map_id);
+                update_node_d_star_lite(first_node->predecessors[i]->source, start_node, goal_node, key_modifier, queue, map_id);
             }
         }
         else {
             first_node->g[map_id] = INFINITY;
             //Rækkefølgen her er potentielt en fejlkilde
             for (int i = 0; i < first_node->neighbour_count; i++) {
-                update_node_lpa_star(first_node->predecessors[i]->dest, start_node, goal_node, key_modifier, queue, map_id);
+                update_node_d_star_lite(first_node->predecessors[i]->source, start_node, goal_node, key_modifier, queue, map_id);
             }
-            update_node_lpa_star(first_node, start_node, goal_node, key_modifier, queue, map_id);
+            update_node_d_star_lite(first_node, start_node, goal_node, key_modifier, queue, map_id);
         }
     }
 }
@@ -439,14 +439,14 @@ void find_shortest_sub_path(edge*** path, int* path_length, int pos, node* start
     if (goal_node == start_node) {
         *path = malloc(sizeof(edge*) * *path_length);
         if (*path == NULL) {
-            printf("Der blev fundet en vej med længde %d, men den er for lang", *path_length);
+            printf("Der blev fundet en vej med længde %d, men den er for lang\n", *path_length);
             exit(EXIT_FAILURE);
         }
         return;
     }
     edge* best_neighbour_edge = lowest_g_predecessor(goal_node, map_id);
     if (best_neighbour_edge == NULL) {
-        printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(");
+        printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(\n");
         exit(EXIT_FAILURE);
     }
     //Her er path_length lig med pos
@@ -484,19 +484,19 @@ void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos,
     if (start_node == goal_node) {
         *path = malloc(sizeof(edge*) * *path_length);
         if (*path == NULL) {
-            printf("Der blev fundet en vej med længde %d, men den er for lang", *path_length);
+            printf("Der blev fundet en vej med længde %d, men den er for lang\n", *path_length);
             exit(EXIT_FAILURE);
         }
         return;
     }
     edge* best_neighbour_edge = lowest_g_successor(start_node, map_id);
     if (best_neighbour_edge == NULL) {
-        printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(");
+        printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(\n");
         exit(EXIT_FAILURE);
     }
     //Her er path_length lig med pos
     (*path_length)++;
-    find_shortest_sub_path(path, path_length, pos + 1, best_neighbour_edge->dest, goal_node, map_id);
+    find_shortest_sub_path_d_star_lite(path, path_length, pos + 1, best_neighbour_edge->dest, goal_node, map_id);
     //Her er path_length længden af det array er blev malloccet
     (*path)[pos] = best_neighbour_edge;
 }
@@ -543,7 +543,7 @@ edge* lowest_g_successor(node* n, int map_id) {
         }
     }
     if (best_neighbour_edge != NULL && best_neighbour_g == INFINITY) {
-        printf("Der blev valgt en uendelig edge");
+        printf("Der blev valgt en uendelig edge\n");
     }
     return best_neighbour_edge;
 }
