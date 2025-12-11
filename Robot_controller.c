@@ -32,10 +32,12 @@ void assign_robot_order(Robot* r, order o) {
 void assign_robot_path_lpa_star(Robot* r, float global_time, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas) {
     int map_id = node_pos(size_x, r->current_node->x, r->current_node->y);
     if (map_datas[map_id].last_variable_node == NULL) {
+
         initialize_lpa_star(warehouse, size_x, size_y, r->current_node, goal_node, map_datas);
     }
 
     lpa_star(r->current_node, goal_node, map_datas, map_id);
+
     if (r->path != NULL) {
         free(r->path);
     }
