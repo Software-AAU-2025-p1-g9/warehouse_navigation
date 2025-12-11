@@ -17,10 +17,11 @@ typedef struct {
     int has_order;
     node* current_node;
     int idle;
-}Robot;
+} robot;
 
-void move_robot(Robot* r, float* global_time);
-void assign_robot_order(Robot* r, order o);
-void assign_robot_path_lpa_star(Robot* r, float global_time, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas);
-void assign_robot_path_d_star_lite(Robot* r, float global_time, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas);
-void assign_robot_path(Robot* r, float global_time, node** warehouse, int map_id, int height, int width, int goal_x, int goal_y);
+void move_robot(robot* r, float* global_time);
+void assign_robot_order(robot* r, order o);
+void assign_robot_path(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm);
+void assign_robot_path_a_star(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node);
+void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas);
+void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas);
