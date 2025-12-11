@@ -41,7 +41,7 @@ int main(void) {
 		map_datas[i].last_variable_node = NULL;
 	}
 
-	printf("Order amount: \n");
+	printf("Order amount:\n");
 	scanf("%d", &order_amount);
 	order orders[order_amount];
 
@@ -54,7 +54,7 @@ int main(void) {
 	srand(seed);
 	order_randomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
 
-	printf("Algorithm?\n0 - A*\n1 - LPA*\n2 - D* Lite\n");
+	printf("Algorithm:\n0 - A*\n1 - LPA*\n2 - D* Lite\n");
 	scanf("%d", &algorithm);
 
 	robot robots[robot_count];
@@ -113,6 +113,6 @@ int main(void) {
 	}
 	clock_t total_time = clock() - start_time;
 
-	printf("The robots completed the orders in %.1f time\n", global_time);
-	printf("The process took %.1f seconds\n", ((float) total_time)/CLOCKS_PER_SEC);
+	printf("The robots completed the orders in %.1f time.\n", global_time);
+	printf("The process took %.1f seconds.\n", ((float) total_time)/CLOCKS_PER_SEC);
 }
