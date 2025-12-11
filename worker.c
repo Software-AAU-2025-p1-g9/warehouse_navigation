@@ -2,12 +2,73 @@
 #include <stdlib.h>
 #include <time.h>
 #include "algorithms.h"
+#include "astar.h"
+
+// Runs either LPA*/D* LITE/A* and then call find_shortest_path
+void get_shortest_path(node* start_node,
+                                      node* goal_node,
+                                      int size_x,
+                                      int size_y,
+                                      node nodes[size_y][size_x],
+                                      map_data* map_datas,
+                                      enum algorithm alg,
+                                      edge*** path,
+                                      int* len) {
+    *path = NULL;
+    *len = 0;
+
+    switch (alg) {
+        case LPA_STAR: {
+            int map_id = node_pos(size_x, start_node->x, start_node->y);
+
+            if (map_datas[map_id].last_variable_node == NULL) {
+                initialize_lpa_star((node**)nodes, size_x, size_y,
+                                    start_node, goal_node, map_datas);
+            }
+
+            lpa_star(start_node, goal_node, map_datas, map_id);
+            find_shortest_path(path, len, start_node, goal_node, map_id);
+            break;
+        }
+
+        case D_STAR_LITE: {
+            int map_id = node_pos(size_x, goal_node->x, goal_node->y);
+
+            if (map_datas[map_id].last_variable_node == NULL) {
+                initialize_d_star_lite((node**)nodes, size_x, size_y,
+                                       start_node, goal_node, map_datas);
+            }
+
+            d_star_lite(start_node, goal_node, map_datas, map_id);
+            find_shortest_path_d_star_lite(path, len,
+                                           start_node, goal_node, map_id);
+            break;
+        }
+
+        case A_STAR: {
+            int map_id = node_pos(size_x, start_node->x, start_node->y);
+            int total_area = size_x * size_y;
+
+            reset_g((node**)nodes, size_x, size_y, map_id);
+
+            astar((node**)nodes,
+                  start_node->x, start_node->y,
+                  goal_node->x, goal_node->y,
+                  map_id, total_area);
+
+            find_shortest_path(path, len, start_node, goal_node, map_id);
+            break;
+        }
+    }
+}
 
 /* This function generate a route using edges
  * and create a test route for these "workers" */
 void generate_simple_loop_route(worker* w,
                                 int size_y, int size_x,
-                                node nodes[size_y][size_x]) {
+                                node nodes[size_y][size_x],
+                                map_data* map_data,
+                                enum algorithm alg) {
     w->current_edge = 0;
 
     // Picks 3 random coordinates
@@ -24,57 +85,35 @@ void generate_simple_loop_route(worker* w,
     node* B = &nodes[by][bx];
     node* C = &nodes[cy][cx];
 
-    int total_nodes = size_x * size_y;
-    map_data map_datas[total_nodes];
+    // Saves 3 stops
+    w->stops[0] = A;
+    w->stops[1] = B;
+    w->stops[2] = C;
 
     // Goes from A -> B by finding edges between nodes
     int len_AB = 0;
     edge** path_AB = NULL;
 
-    int map_id_AB = node_pos(size_x, A->x, A->y);
-
-    // Initializing LPA* for the route A -> B
-    initialize_lpa_star((node**)nodes, size_x, size_y, A, B, map_datas);
-
-    lpa_star(A, B, map_datas, map_id_AB);
-
-    // Find the shortest path using array of edges
-    find_shortest_path(&path_AB, &len_AB, A, B, map_id_AB);
+    get_shortest_path(A, B, size_x, size_y,
+                        nodes, map_data, alg,
+                        &path_AB, &len_AB);
 
     // Goes from B -> C by finding edges between nodes
     int len_BC = 0;
     edge** path_BC = NULL;
 
-    int map_id_BC = node_pos(size_x, B->x, B->y);
-
-    // Initializing LPA* for the route B -> C
-    initialize_lpa_star((node**)nodes, size_x, size_y, B, C, map_datas);
-
-    lpa_star(B, C, map_datas, map_id_BC);
-
-    // Find the shortest path using array of edges
-    find_shortest_path(&path_BC, &len_BC, B, C, map_id_BC);
+    get_shortest_path(B, C, size_x, size_y,
+                        nodes, map_data, alg,
+                        &path_BC, &len_BC);
 
     // Goes from C -> A by finding edges between nodes
     int len_CA = 0;
     edge** path_CA = NULL;
 
-    int map_id_CA = node_pos(size_x, C->x, C->y);
+    get_shortest_path(C, A, size_x, size_y,
+                        nodes, map_data, alg,
+                        &path_CA, &len_CA);
 
-    // Initializing LPA* for the route C -> A
-    initialize_lpa_star((node**)nodes, size_x, size_y, C, A, map_datas);
-
-    lpa_star(C, A, map_datas, map_id_CA);
-
-    // Find the shortest path using array of edges
-    find_shortest_path(&path_CA, &len_CA, C, A, map_id_CA);
-    w->stops[0] = A;
-    w->stops[1] = B;
-    w->stops[2] = C;
-
-    find_shortest_path(&path_AB, &len_AB, A, B, map_id_AB);
-    find_shortest_path(&path_BC, &len_BC, B, C, map_id_BC);
-    find_shortest_path(&path_CA, &len_CA, C, A, map_id_CA);
 
     int total_edges = len_AB + len_BC + len_CA;
     w->route_length = total_edges;
@@ -88,10 +127,10 @@ void generate_simple_loop_route(worker* w,
         return;
     }
 
-    int path_idx = 0;
-    for (int i = 0; i < len_AB; i++) w->route[path_idx++] = path_AB[i];
-    for (int i = 0; i < len_BC; i++) w->route[path_idx++] = path_BC[i];
-    for (int i = 0; i < len_CA; i++) w->route[path_idx++] = path_CA[i];
+    int path_ref = 0;
+    for (int i = 0; i < len_AB; i++) w->route[path_ref++] = path_AB[i];
+    for (int i = 0; i < len_BC; i++) w->route[path_ref++] = path_BC[i];
+    for (int i = 0; i < len_CA; i++) w->route[path_ref++] = path_CA[i];
 
     free(path_AB);
     free(path_BC);

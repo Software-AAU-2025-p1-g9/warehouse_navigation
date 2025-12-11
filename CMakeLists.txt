@@ -32,3 +32,13 @@ add_executable(algorithm_test
         warehouse.c
         algorithms.h)
 add_executable(robot_controller Robot_controller.h Robot_controller.c)
+
+add_executable(worker_test
+        worker.c
+        worker.h
+        worker_simulation.c
+        algorithms.h
+        algorithms.c
+        astar.h
+        astar.c
+)
