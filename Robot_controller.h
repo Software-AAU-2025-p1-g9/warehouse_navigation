@@ -21,5 +21,6 @@ typedef struct {
 
 void move_robot(Robot* r, float* global_time);
 void assign_robot_order(Robot* r, order o);
-void assign_robot_path_lpa(Robot* r, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas);
-void assign_robot_path(Robot* r, node** warehouse, int map_id, int height, int width, int goal_x, int goal_y);
+void assign_robot_path_lpa_star(Robot* r, float global_time, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas);
+void assign_robot_path_d_star_lite(Robot* r, float global_time, node** warehouse, int size_x, int size_y, node* goal_node, map_data* map_datas);
+void assign_robot_path(Robot* r, float global_time, node** warehouse, int map_id, int height, int width, int goal_x, int goal_y);

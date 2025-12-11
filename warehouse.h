@@ -8,6 +8,9 @@ typedef struct edge edge;
 typedef struct node node;
 typedef struct order order;
 
+enum algorithm {
+	A_STAR, LPA_STAR, D_STAR_LITE
+};
 
 #define MAX_EDGES 8 // for alle shelves uendelig cost til at starte med. kør efter 1,41/sqr(2). skal være i et array.
 struct node {

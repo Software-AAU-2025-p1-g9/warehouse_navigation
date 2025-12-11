@@ -44,12 +44,11 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
         int open_nodes_tracker = 0;
         //check open nodes for lowest f(n). Stop loop when the last open_node is found
         while (open_nodes[i][0] != INT_MAX) {
-            //Setting the f(n) of the current i position
-            float current_f = (nodes[open_nodes[i][0]][open_nodes[i][1]].g[map_id]+
-                             nodes[open_nodes[i][0]][open_nodes[i][1]].h[map_id]);
-
             //Check if y is 0 or above as closed nodes get value of -1 to replace them.
             if (open_nodes[i][0] >= 0) {
+                //Setting the f(n) of the current i position
+                float current_f = (nodes[open_nodes[i][0]][open_nodes[i][1]].g[map_id]+
+                                   nodes[open_nodes[i][0]][open_nodes[i][1]].h[map_id]);
                 //Check if the current f is below the lowest found
                 //If so set current x and y as lowest f
                 if (current_f < lowestf) {

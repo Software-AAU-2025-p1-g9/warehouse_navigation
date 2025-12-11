@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #include "algorithms.h"
@@ -35,8 +36,8 @@ int main(void) {
 	map_data map_datas[width * height];
 	for (int i = 0; i < width * height; i++) {
 		map_datas[i].priority_queue.first = NULL;
-		map_datas[i].initialized = 0;
 		map_datas[i].key_modifier = 0;
+		map_datas[i].last_variable_node = NULL;
 	}
 
 	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, drop_off_points, &drop_off_count, pick_up_points, &pick_up_count, corridor_width);
@@ -47,11 +48,16 @@ int main(void) {
 	order orders[order_amount];
 	OrderRandomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
 
+	enum algorithm algorithm;
+	printf("Algorithm?\n0 - A*\n1 - LPA*\n2 - D* Lite\n");
+	scanf("%d", &algorithm);
+
 	Robot r;
 	r.has_order = 0;
 	r.current_node = &warehouse[0][0];
 	r.goal_1 = NULL;
 	r.goal_2 = NULL;
+	r.path = NULL;
 	r.idle = 0;
 
 	float global_time = 0;
@@ -59,19 +65,41 @@ int main(void) {
 		if (r.has_order == 0) {
 			if (orders_assigned < order_amount) {
 				assign_robot_order(&r, orders[orders_assigned++]);
-				assign_robot_path_lpa(&r, warehouse, width, height, r.goal_1, map_datas);
+				switch (algorithm) {
+					case D_STAR_LITE:
+						assign_robot_path_d_star_lite(&r, global_time, warehouse, width, height, r.goal_1, map_datas);
+						break;
+					case LPA_STAR:
+						assign_robot_path_lpa_star(&r, global_time, warehouse, width, height, r.goal_1, map_datas);
+						break;
+					default:
+						assign_robot_path(&r, global_time, warehouse, node_pos(width, r.current_node->x, r.current_node->y), height, width, r.goal_1->x, r.goal_1->y);
+				}
 			}
 			else {
+				free(r.path);
 				r.idle = 1;
 				continue;
 			}
 		}
 		move_robot(&r, &global_time);
 		if (r.current_node == r.goal_1) {
-			assign_robot_path(&r, warehouse, node_pos(width, r.current_node->x,r.current_node->y), height, width, r.goal_1->x, r.goal_1->y);
+			switch (algorithm) {
+				case D_STAR_LITE:
+					assign_robot_path_d_star_lite(&r, global_time, warehouse, width, height, r.goal_2, map_datas);
+					break;
+				case LPA_STAR:
+					assign_robot_path_lpa_star(&r, global_time, warehouse, width, height, r.goal_2, map_datas);
+					break;
+				default:
+					assign_robot_path(&r, global_time, warehouse, node_pos(width, r.current_node->x, r.current_node->y), height, width, r.goal_2->x, r.goal_2->y);
+
+			}
 		}
 		if (r.current_node == r.goal_2) {
 			r.has_order = 0;
 		}
 	}
+
+	printf("The robot completed the orders in %f04.1 time\n", global_time);
 }
