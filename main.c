@@ -91,7 +91,6 @@ int main(void) {
 		if (r->has_order == 0) {
 			if (orders_assigned < order_amount) {
 				assign_robot_order(r, orders[orders_assigned++]);
-				printf("path prøver blive assigned\n");
 				switch (algorithm) {
 					case D_STAR_LITE:
 						assign_robot_path_d_star_lite(r, global_time, warehouse, width, height, r->goal_1, map_datas);
@@ -102,7 +101,6 @@ int main(void) {
 					default:
 						assign_robot_path(r, global_time, warehouse, node_pos(width, r->current_node->x, r->current_node->y), height, width, r->goal_1->x, r->goal_1->y);
 				}
-				printf("path\n");
 			}
 			else {
 				free(r->path);
