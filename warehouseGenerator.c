@@ -201,7 +201,7 @@ void printWarehouse(node** grid, int width, int height, node** shelves, int shel
 // createGraphFromWarehouse ( create_graph=
 //  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
 // ============================================================
-void create_graph(int width, int height, node** grid, edge** edges, int* edge_count) {
+void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count) {
 
     if (width <= 1 || height <= 1 || !grid) {
         fprintf(stderr, "ERROR: Cannot create graph: invalid size GG!\n");
@@ -228,17 +228,17 @@ void create_graph(int width, int height, node** grid, edge** edges, int* edge_co
 
     // 1. Opret noder for alle felter. Få kigget på dette også
     for (int y = 0; y < height; y++) {
-        (grid)[y] = calloc(width, sizeof(node));
-        if (!(grid)[y]) {
+        (*grid)[y] = calloc(width, sizeof(node));
+        if (!(*grid)[y]) {
             fprintf(stderr, "ERROR: Failed to allocate row GG %d!\n", y);
             // frigør allerede allokerede rækker.
-            for (int i = 0; i < y; i++) free((grid)[i]);
+            for (int i = 0; i < y; i++) free((*grid)[i]);
             free(*grid);
             exit(EXIT_FAILURE);
         }
         for (int x = 0; x < width; x++) {
-            (grid)[y][x].y = y;
-            (grid)[y][x].x = x;
+            (*grid)[y][x].y = y;
+            (*grid)[y][x].x = x;
         }
     }
 
@@ -252,7 +252,7 @@ void create_graph(int width, int height, node** grid, edge** edges, int* edge_co
     // 3. Opret edges for hver node
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            node* n = &(grid)[y][x];
+            node* n = &(*grid)[y][x];
 
             // Alloker arrays til successorer og predecessorer
             n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
@@ -267,7 +267,7 @@ void create_graph(int width, int height, node** grid, edge** edges, int* edge_co
                 if (neighbour_x < 0 || neighbour_y < 0 || neighbour_x >= width || neighbour_y >= height)
                     continue;
 
-                node* neighbour_node = &(grid)[neighbour_y][neighbour_x];
+                node* neighbour_node = &(*grid)[neighbour_y][neighbour_x];
 
                 // Opret edges
                 edge* edge_1 = &(*edges)[edges_added++];

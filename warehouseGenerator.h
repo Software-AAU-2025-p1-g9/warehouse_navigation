@@ -35,7 +35,7 @@ void freeWarehouse(node** grid, int width, int height, node** shelves, node** dr
 // ===============================================================
 // Funktioner til grafen
 // ===============================================================
-void create_graph(int width, int height, node** grid, edge** edges, int* edge_count);
+void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count);
 void freeGraph(node** list, int count);
 
 #endif //WAREHOUSE_NAVIGATION_WAREHOUSE_GENERATOR_H
