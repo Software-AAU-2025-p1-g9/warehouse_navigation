@@ -42,37 +42,6 @@ int main(void) {
 
 	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, drop_off_points, &drop_off_count, pick_up_points, &pick_up_count, corridor_width);
 
-	/*
-	edge** path;
-	int path_len;
-	int map_id = node_pos(width, 49, 0);
-	initialize_d_star_lite(warehouse, width, height, &warehouse[0][0], &warehouse[0][49], map_datas);
-	d_star_lite(&warehouse[0][0], &warehouse[0][49], map_datas, map_id);
-	print_g(warehouse, width, height, map_id);
-	find_shortest_path_d_star_lite(&path, &path_len, &warehouse[0][0], &warehouse[0][49], map_id);
-	printf("\n\n");
-	d_star_lite(&warehouse[49][49], &warehouse[0][49], map_datas, map_id);
-	print_g(warehouse, width, height, map_id);
-	find_shortest_path_d_star_lite(&path, &path_len, &warehouse[49][49], &warehouse[0][49], map_id);
-	printf("\n\n");
-	map_id = node_pos(width, 2, 2);
-	initialize_d_star_lite(warehouse, width, height, &warehouse[1][1], &warehouse[2][2], map_datas);
-	d_star_lite(&warehouse[1][1], &warehouse[2][2], map_datas, map_id);
-	print_g(warehouse, width, height, map_id);
-	find_shortest_path_d_star_lite(&path, &path_len, &warehouse[1][1], &warehouse[2][2], map_id);
-	printf("\n\n");
-	map_id = node_pos(width, 0, 2);
-	initialize_d_star_lite(warehouse, width, height, &warehouse[0][0], &warehouse[2][0], map_datas);
-	d_star_lite(&warehouse[0][0], &warehouse[2][0], map_datas, map_id);
-	print_g(warehouse, width, height, map_id);
-	find_shortest_path_d_star_lite(&path, &path_len, &warehouse[0][0], &warehouse[2][0], map_id);
-	printf("\n\n");
-	d_star_lite(&warehouse[9][9], &warehouse[2][0], map_datas, map_id);
-	print_g(warehouse, width, height, map_id);
-	find_shortest_path_d_star_lite(&path, &path_len, &warehouse[9][90], &warehouse[2][0], map_id);
-	printf("\n\n");
-	*/
-
 	int order_amount, orders_assigned = 0;
 	printf("Order amount: \n");
 	scanf("%d", &order_amount);
