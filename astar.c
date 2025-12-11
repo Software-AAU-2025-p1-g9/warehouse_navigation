@@ -27,12 +27,8 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
     int temp_x = start_x,
         temp_y = start_y;
 
-    int step = 0; //Debug
     //Check all nodes with lowest f(n) until the open node with lowest f(n) is the goal node
     while (nodes[goal_y][goal_x].g[map_id] == INFINITY) {
-        //Debug
-        printf("\nCurrent node x%d y%d \n", temp_x, temp_y);
-        step++;
         //Calculating succeding nodes from temp y & x
         calc_succeding(nodes, temp_x, temp_y, map_id, goal_x, goal_y, open_nodes);
 
@@ -64,10 +60,6 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
         open_nodes[open_nodes_tracker][0] = -1;
         open_nodes[open_nodes_tracker][1] = -1;
     }
-
-    //Debug
-    printf("\nJeg nåede ud af while-loopet af en eller anden grund\n");
-    printf("For mål er g = %f \n", nodes[goal_y][goal_x].g[map_id]);
 
     //Free memory from inner arrays
     for (int i = 0; i < total_area; i++) {

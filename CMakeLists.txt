@@ -25,6 +25,8 @@ add_executable(warehouse_navigation
         astar.c
         algorithms.h
         algorithms.c
+        order_generator.c
+        order_generator.h
 )
 
 add_executable(algorithm_test
