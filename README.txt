@@ -1,4 +1,4 @@
-The main file looks a bit messy right now, as we are currently debugging a lot there.
+In the main file, you can select the warehouse size, robot amount, algorithm and more, and the program will output the "time" it took for the computers to complete the orders, and the time it took to compute the paths.
 warehouse.c has functions and structs that can be used by all files.
 the main structure of the warehouse is that it is an array of arrays of nodes. These nodes store their coordinates, and pointers to up to sixteen edges, (eight inwards, and eight outwards).
 An edge is a directed connection between nodes. It has a pointer to its source, and a pointer to its destination as well as a cost value, that most of the time is equal to the distance between the two nodes.
