@@ -1,12 +1,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
-
-#include "algorithms.h"
 #include "warehouse.h"
-#include "Robot_controller.h"
 #include "warehouseGenerator.h"
+#include "order_generator.h"
+#include "algorithms.h"
+#include "Robot_controller.h"
 
 int main(void) {
 	int width, height, corridor_width;
@@ -16,7 +17,6 @@ int main(void) {
 	scanf("%d", &height);
 	printf("Corridor width:\n");
 	scanf("%d", &corridor_width);
-
 
 	node** warehouse;
 
@@ -46,7 +46,15 @@ int main(void) {
 	printf("Order amount: \n");
 	scanf("%d", &order_amount);
 	order orders[order_amount];
-	OrderRandomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
+
+	unsigned int seed;
+	printf("Seed (0 for random seed):\n");
+	scanf("%ud", &seed);
+	if (seed == 0) {
+		seed = (unsigned int)(time(NULL) ^ (uintptr_t)&seed); //mostly unpredictable seed for randomization
+	}
+	srand(seed); //inputs the seed into the random function
+	order_randomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
 
 	enum algorithm algorithm;
 	printf("Algorithm?\n0 - A*\n1 - LPA*\n2 - D* Lite\n");
@@ -61,6 +69,8 @@ int main(void) {
 	r.idle = 0;
 
 	float global_time = 0;
+
+	clock_t start_time = clock();
 	while (r.idle == 0) {
 		if (r.has_order == 0) {
 			if (orders_assigned < order_amount) {
@@ -93,13 +103,14 @@ int main(void) {
 					break;
 				default:
 					assign_robot_path(&r, global_time, warehouse, node_pos(width, r.current_node->x, r.current_node->y), height, width, r.goal_2->x, r.goal_2->y);
-
 			}
 		}
 		if (r.current_node == r.goal_2) {
 			r.has_order = 0;
 		}
 	}
+	clock_t total_time = clock() - start_time;
 
 	printf("The robot completed the orders in %f04.1 time\n", global_time);
+	printf("The process took %f04.1 seconds\n", ((float) total_time)/CLOCKS_PER_SEC);
 }
