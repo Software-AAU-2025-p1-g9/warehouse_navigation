@@ -1,4 +1,5 @@
 In the main file, you can select the warehouse size, robot amount, algorithm and more, and the program will output the "time" it took for the computers to complete the orders, and the time it took to compute the paths.
+As the default setting, the program prints a detailed explanation when an algorithm is used, but this can be disabled for a faster version. To do this, go to robot_controller.h and change the included file from algorithms_print.h to algorithms.h. This creates errors in robot_controller.c. To fix them, remove the last three inputs: warehouse, width and height, from the lpa_star and d_star_lite functions.
 warehouse.c has functions and structs that can be used by all files.
 the main structure of the warehouse is that it is an array of arrays of nodes. These nodes store their coordinates, and pointers to up to sixteen edges, (eight inwards, and eight outwards).
 An edge is a directed connection between nodes. It has a pointer to its source, and a pointer to its destination as well as a cost value, that most of the time is equal to the distance between the two nodes.
