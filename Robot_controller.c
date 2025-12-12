@@ -8,16 +8,17 @@
 #include <warehouse.h>
 #include "astar.h"
 
-void assign_robot_path(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm) {
+void assign_robot_path(robot* r, float* global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm) {
+    *global_time = r->time_at_next_stop;
     switch (algorithm) {
         case D_STAR_LITE:
-            assign_robot_path_d_star_lite(r, global_time, warehouse, height, width, goal_node, map_datas);
+            assign_robot_path_d_star_lite(r, *global_time, warehouse, height, width, goal_node, map_datas);
             break;
         case LPA_STAR:
-            assign_robot_path_lpa_star(r, global_time, warehouse, height, width, goal_node, map_datas);
+            assign_robot_path_lpa_star(r, *global_time, warehouse, height, width, goal_node, map_datas);
             break;
         default:
-            assign_robot_path_a_star(r, global_time, warehouse, height, width, goal_node);
+            assign_robot_path_a_star(r, *global_time, warehouse, height, width, goal_node);
     }
 }
 

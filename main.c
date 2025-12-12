@@ -6,7 +6,6 @@
 #include "warehouse.h"
 #include "warehouseGenerator.h"
 #include "order_generator.h"
-#include "algorithms.h"
 #include "Robot_controller.h"
 
 int main(void) {
@@ -92,7 +91,7 @@ int main(void) {
 		if (r->has_order == 0) {
 			if (orders_assigned < order_amount) {
 				assign_robot_order(r, orders[orders_assigned++]);
-				assign_robot_path(r, global_time, warehouse, height, width, r->goal_1, map_datas, algorithm);
+				assign_robot_path(r, &global_time, warehouse, height, width, r->goal_1, map_datas, algorithm);
 			}
 			else {
 				free(r->path);
@@ -105,7 +104,7 @@ int main(void) {
 		move_robot(r, &global_time);
 
 		if (r->current_node == r->goal_1) {
-			assign_robot_path(r, global_time, warehouse, height, width, r->goal_2, map_datas, algorithm);
+			assign_robot_path(r, &global_time, warehouse, height, width, r->goal_2, map_datas, algorithm);
 		}
 		if (r->current_node == r->goal_2) {
 			r->has_order = 0;

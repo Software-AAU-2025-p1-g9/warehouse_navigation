@@ -21,7 +21,7 @@ typedef struct {
 
 void move_robot(robot* r, float* global_time);
 void assign_robot_order(robot* r, order o);
-void assign_robot_path(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm);
+void assign_robot_path(robot* r, float* global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm);
 void assign_robot_path_a_star(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node);
 void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas);
 void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas);
