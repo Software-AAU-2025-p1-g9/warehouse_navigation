@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <warehouse.h>
 #include "astar.h"
-#include "algorithms.h"
-
 
 void assign_robot_path(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm) {
     switch (algorithm) {
@@ -46,7 +44,7 @@ void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, i
     if (map_datas[map_id].last_variable_node == NULL) {
         initialize_lpa_star(warehouse, width, height, r->current_node, goal_node, map_datas);
     }
-    lpa_star(r->current_node, goal_node, map_datas, map_id);
+    lpa_star(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
 
     if (r->path != NULL) {
         free(r->path);
@@ -62,7 +60,7 @@ void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse
     if (map_datas[map_id].last_variable_node == NULL) {
         initialize_d_star_lite(warehouse, width, height, r->current_node, goal_node, map_datas);
     }
-    d_star_lite(r->current_node, goal_node, map_datas, map_id);
+    d_star_lite(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
 
     if (r->path != NULL) {
         free(r->path);
