@@ -71,25 +71,37 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
 }
 
 // ============================================================
+// adjustWarehouseSize -- DEN ER NY--
+//  Sikrer at width ikke giver dobbelthylde i højre side
+// ============================================================
+void adjustWarehouseSize(int* width, int corridorWidth)
+{
+    int block = 2 + corridorWidth;
+
+    // Hvis modulo = 1 → der ender en enkelt hylde til højre = UØNSKET
+    if ((*width % block) == 1) {
+        (*width)--; // gør width én mindre for at undgå ekstra hylde-kolonne
+    }
+}
+// dermed bliver up.
+// ============================================================
 // generateWarehouseLayout
 //  Fylder lageret med shelves, dropoffs og pickups
 // ============================================================
-void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth)
-{
-
-        if (!grid || width <= 2 || height <= 2) {
-            fprintf(stderr, "ERROR: Invalid layout size GG!\n");
-            return;
-        }
+void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth) {
+    if (!grid || width <= 2 || height <= 2) {
+        fprintf(stderr, "ERROR: Invalid layout size GG!\n");
+        return;
+    }
     *shelf_count = 0;
-    *dropoff_count = 0;
-    *pickup_count = 0; // <-- tilføjet fra setPickupPoints
+    *dropoff_count = width;
+    *pickup_count = width; // <-- tilføjet fra setPickupPoints
 
     int x = 0;
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
-           *shelf_count += height -2;
+            *shelf_count += height -2;
         }
 
         // Korridor-blok
@@ -112,6 +124,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
+            if (x == 0) s++;
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
 
@@ -130,45 +143,27 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {}
     }
 
-
-    // Nyt loop: fyld pickups og opdater costs
-    x = 0;
-    while (x < width) {
-        // Hylde-blok (tom)
-        for (int s = 0; s < 2 && x < width; s++, x++) { }
-
-        // Korridor-blok (tom)
-        for (int c = 0; c < corridorWidth && x < width; c++, x++) {
-            for (int y = 1; y < height - 1; y++) {
-                node* n = &grid[y][x];
-
-                // Tilføj til pickups direkte (fra setPickupPoints)
-                (*pickups)[(*pickup_count)++] = n;
-
-                // Opdater costs til predecessors og successors
-                for (int i = 0; i < n->neighbour_count; i++) {
-                    edge* e = n->predecessors[i];
-                    if (!e) continue;
-                    float dx = (float)(n->x - e->source->x);
-                    float dy = (float)(n->y - e->source->y);
-                    e->cost = sqrtf(dx * dx + dy * dy);
-                }
-                for (int i = 0; i < n->neighbour_count; i++) {
-                    edge* e = n->successors[i];
-                    if (!e) continue;
-                    float dx = (float)(n->x - e->dest->x);
-                    float dy = (float)(n->y - e->dest->y);
-                    e->cost = sqrtf(dx*dx + dy*dy); // float version
-                }
-            }
-        }
+    // ============================================================
+    // Pickups = hele øverste række
+    // ============================================================
+    *pickups = malloc(sizeof(node*) * width);
+    if (!*pickups) {
+        fprintf(stderr, "ERROR: Failed to allocate pickups array GG!\n");
+        exit(EXIT_FAILURE);
     }
+    for (int x = 0; x < width; x++)
+        (*pickups)[x] = &grid[0][x];  // øverste række
 
-
-    // Dropoff på tilfældig walkable position i korridor
-    int drop_x = corridorWidth; // eksempel: første korridorkolonne
-    int drop_y = height / 2;
-    (*dropoffs)[(*dropoff_count)++] = &grid[drop_y][drop_x];
+    // ============================================================
+    // Dropoffs = hele nederste række
+    // ============================================================
+    *dropoffs = malloc(sizeof(node*) * width);
+    if (!*dropoffs) {
+        fprintf(stderr, "ERROR: Failed to allocate dropoffs array GG!\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int x = 0; x < width; x++)
+        (*dropoffs)[x] = &grid[height-1][x];  // nederste række
 }
 // ============================================================
 // printWarehouse
