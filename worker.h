@@ -1,9 +1,9 @@
 #ifndef WORKER_H
 #define WORKER_H
+#define NUM_STOPS 3
 #include "algorithms.h"
 #include "warehouse.h"
 
-#define NUM_STOPS 3
 
 typedef struct {
     edge** route;

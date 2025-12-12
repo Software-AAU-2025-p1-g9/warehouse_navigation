@@ -5,7 +5,7 @@
 #include "astar.h"
 
 // Runs either LPA*/D* LITE/A* and then call find_shortest_path
-void get_shortest_path(node* start_node,
+void shortest_path(node* start_node,
                                       node* goal_node,
                                       int size_x,
                                       int size_y,
@@ -94,7 +94,7 @@ void generate_simple_loop_route(worker* w,
     int len_AB = 0;
     edge** path_AB = NULL;
 
-    get_shortest_path(A, B, size_x, size_y,
+    shortest_path(A, B, size_x, size_y,
                         nodes, map_data, alg,
                         &path_AB, &len_AB);
 
@@ -102,7 +102,7 @@ void generate_simple_loop_route(worker* w,
     int len_BC = 0;
     edge** path_BC = NULL;
 
-    get_shortest_path(B, C, size_x, size_y,
+    shortest_path(B, C, size_x, size_y,
                         nodes, map_data, alg,
                         &path_BC, &len_BC);
 
@@ -110,7 +110,7 @@ void generate_simple_loop_route(worker* w,
     int len_CA = 0;
     edge** path_CA = NULL;
 
-    get_shortest_path(C, A, size_x, size_y,
+    shortest_path(C, A, size_x, size_y,
                         nodes, map_data, alg,
                         &path_CA, &len_CA);
 

@@ -34,9 +34,9 @@ add_executable(algorithm_test
 add_executable(robot_controller Robot_controller.h Robot_controller.c)
 
 add_executable(worker_test
+        worker_simulation.c
         worker.c
         worker.h
-        worker_simulation.c
         algorithms.h
         algorithms.c
         astar.h
