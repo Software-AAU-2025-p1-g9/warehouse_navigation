@@ -41,4 +41,6 @@ add_executable(worker_test
         algorithms.c
         astar.h
         astar.c
+        warehouse.c
+        warehouse.h
 )

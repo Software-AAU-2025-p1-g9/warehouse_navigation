@@ -4,16 +4,22 @@
 #include "algorithms.h"
 #include "astar.h"
 
+int stop_node(worker* w, node* n) {
+    if (w == NULL || n == NULL) {
+        return -1;
+    }
+    for (int i = 0; i < NUM_STOPS; i++) {
+        if (w->stops[i] == n) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 // Runs either LPA*/D* LITE/A* and then call find_shortest_path
 void shortest_path(node* start_node,
-                                      node* goal_node,
-                                      int size_x,
-                                      int size_y,
-                                      node nodes[size_y][size_x],
-                                      map_data* map_datas,
-                                      enum algorithm alg,
-                                      edge*** path,
-                                      int* len) {
+                                      node* goal_node, int size_x, int size_y, node nodes[size_y][size_x],
+                                      map_data* map_datas, enum algorithm alg, edge*** path,int* len) {
     *path = NULL;
     *len = 0;
 
@@ -62,13 +68,116 @@ void shortest_path(node* start_node,
     }
 }
 
+void new_predecessor_costs(node* n, int map_id, float worker_wait,
+                                   float* old_costs, int* old_count) {
+    *old_count = 0;
+    if (!n || !n->predecessors) {
+        return;
+    }
+
+    for (int i = 0; i < n->neighbour_count; i++) {
+        edge* e = n->predecessors[i];
+        if (!e) {
+            continue;
+        }
+
+        old_costs[*old_count] = e->cost;
+        (*old_count)++;
+
+        float g_here = (n->g != NULL) ? n->g[map_id] : 0.0f;
+        e->cost = g_here + worker_wait;
+    }
+}
+
+void restore_predecessor_costs(node* n, float* old_costs, int old_count) {
+    if (!n || !n->predecessors) {
+        return;
+    }
+
+    int k = 0;
+    for (int i = 0; i < n->neighbour_count && k < old_count; i++) {
+        edge* e = n->predecessors[i];
+        if (!e) {
+            continue;
+        }
+        e->cost = old_costs[k++];
+    }
+}
+void move_worker(worker* w, float* global_time, int size_x, enum algorithm alg) {
+
+    if (w == NULL || global_time == NULL) {
+        return;
+    }
+    if (w->route == NULL || w->route_length <= 0) {
+        return;
+    }
+    if (w->current_node == NULL) {
+        return;
+    }
+
+    *global_time = w->time_stop;
+
+    if (w->current_edge >= w->route_length) {
+        w->current_edge = 0;
+    }
+
+    edge* e = w->route[w->current_edge];
+    if (e == NULL) {
+        w->current_edge++;
+        if (w->current_edge >= w->route_length) {
+            w->current_edge = 0;
+            return;
+        }
+    }
+
+    node* from_node = w->current_node;
+
+    float wait_time = 0.0f;
+    int stop_ref = stop_node(w, from_node);
+    if (stop_ref >= 0) {
+        wait_time = w->stay_time[stop_ref];
+    }
+
+    int map_id;
+
+    if (alg == D_STAR_LITE) {
+        map_id = node_pos(size_x, e->dest->x, e->dest->y);
+    } else {
+        map_id = node_pos(size_x, from_node->x, from_node->y);
+    }
+
+    float old_costs[from_node->neighbour_count];
+    int old_count = 0;
+    new_predecessor_costs(from_node, map_id, wait_time, old_costs, &old_count);
+
+    w->current_node = e->dest;
+
+    w->current_edge++;
+    if (w->current_edge >= w->route_length) {
+        w->current_edge = 0;
+    }
+
+    restore_predecessor_costs(from_node, old_costs, old_count);
+
+    float next_wait = 0;
+    int next_stop = stop_node(w, w->current_node);
+    if (next_stop >= 0) {
+        next_wait = w->stay_time[next_stop];
+    }
+
+    float next_move_time = 0;
+    edge* next_edge = w->route[w->current_edge];
+    if (next_edge != NULL) {
+        next_move_time = next_edge->cost;
+    }
+
+    w->time_stop = *global_time + next_wait + next_move_time;
+}
+
 /* This function generate a route using edges
  * and create a test route for these "workers" */
-void generate_simple_loop_route(worker* w,
-                                int size_y, int size_x,
-                                node nodes[size_y][size_x],
-                                map_data* map_data,
-                                enum algorithm alg) {
+void generate_simple_loop_route(worker* w, int size_y, int size_x, node nodes[size_y][size_x],
+                                map_data* map_data, enum algorithm alg, float global_time) {
     w->current_edge = 0;
 
     // Picks 3 random coordinates
@@ -114,9 +223,7 @@ void generate_simple_loop_route(worker* w,
                         nodes, map_data, alg,
                         &path_CA, &len_CA);
 
-
-    int total_edges = len_AB + len_BC + len_CA;
-    w->route_length = total_edges;
+    w->route_length = len_AB + len_BC + len_CA;
 
     w->route = malloc(w->route_length * sizeof(edge*));
     if (w->route == NULL) {
@@ -139,4 +246,18 @@ void generate_simple_loop_route(worker* w,
     for (int i = 0; i < NUM_STOPS; i++) {
         w->stay_time[i] = (float)((rand() % 20) + 1);
     }
+
+    w->current_edge = 0;
+
+    float first_move = 0;
+
+    if (w->route_length > 0 && w->route[0] != NULL) {
+        w->current_node = w->route[0]->source;
+        first_move = w->route[0]->cost;
+    } else {
+        w->current_node = NULL;
+    }
+
+    w->time_stop = global_time + first_move;
+
 }
