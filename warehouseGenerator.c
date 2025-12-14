@@ -77,9 +77,9 @@ node** createWarehouse(int width, int height) { // ændre den til ikke at være 
 void adjustWarehouseSize(int* width, int height, int corridorWidth)
 {
     if (!width || *width <= 2 || height <= 2 || corridorWidth < 1) {
-        fprintf(stderr, "ERROR: Ugyldige lagerdimensioner! width=%d, height=%d, corridorWidth=%d\n",
+        fprintf(stderr, "ERROR: Ugyldige lagerdimensioner GG MAN! width=%d, height=%d, corridorWidth=%d\n",
                 width ? *width : -1, height, corridorWidth);
-        return;
+        exit(EXIT_FAILURE);
     }
 
     int block = 2 + corridorWidth;
@@ -87,8 +87,6 @@ void adjustWarehouseSize(int* width, int height, int corridorWidth)
     if ((*width % block) == 1) {
         (*width)--; // undgå dobbelthylde i højre side
         printf("adjustWarehouseSize: width blev reduceret til %d for at undgå dobbelthylde i højre side GG!.\n", *width);
-    } else {
-        printf("adjustWarehouseSize: width forbliver GG! %d.\n", *width);
     }
 
 }
@@ -100,7 +98,7 @@ void adjustWarehouseSize(int* width, int height, int corridorWidth)
 void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth) {
     if (!grid) {
         fprintf(stderr, "ERROR: Grid er NULL!\n");
-        return;
+        exit(EXIT_FAILURE);
     }
     *shelf_count = 0;
     *dropoff_count = width;
@@ -113,6 +111,8 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
+            if (x == 0) s++;
+            if (s < 2 && x < width)
             *shelf_count += height -2;
         }
 
@@ -161,8 +161,9 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     x = 0;
     while (x < width) {
         // Hylde-blok (tom)
-        for (int s = 0; s < 2 && x < width; s++, x++) { }
-
+        for (int s = 0; s < 2 && x < width; s++, x++) {
+            if (x == 0) s++;
+        }
         // Korridor-blok (tom)
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {
             for (int y = 1; y < height - 1; y++) {
