@@ -27,8 +27,6 @@ add_executable(warehouse_navigation
         algorithms.c
         order_generator.c
         order_generator.h
-        algorithms_print.c
-        algorithms_print.h
 )
 
 add_executable(warehouse_navigation_print

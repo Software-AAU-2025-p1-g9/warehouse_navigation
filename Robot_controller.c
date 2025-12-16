@@ -46,6 +46,7 @@ void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, i
         initialize_lpa_star(warehouse, width, height, r->current_node, goal_node, map_datas);
     }
     lpa_star(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
+    //lpa_star(r->current_node, goal_node, map_datas, map_id);
 
     if (r->path != NULL) {
         free(r->path);
@@ -62,6 +63,7 @@ void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse
         initialize_d_star_lite(warehouse, width, height, r->current_node, goal_node, map_datas);
     }
     d_star_lite(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
+    //d_star_lite(r->current_node, goal_node, map_datas, map_id);
 
     if (r->path != NULL) {
         free(r->path);

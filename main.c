@@ -24,14 +24,14 @@ int main(void) {
 	printf("Robot count:\n");
 	scanf("%d", &robot_count);
 
+	adjustWarehouseSize(&width, height, corridor_width);
 	create_graph(width, height, &warehouse, &edges, &edge_count);
 
-	int pick_up_count = width * height;
-	node* pick_up_points[pick_up_count];
-	int drop_off_count = width * height;
-	node* drop_off_points[drop_off_count];
+	int pick_up_count, drop_off_count;
+	node** drop_off_points;
+	node** pick_up_points;
 
-	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, drop_off_points, &drop_off_count, pick_up_points, &pick_up_count, corridor_width);
+	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, &drop_off_points, &drop_off_count, &pick_up_points, &pick_up_count, corridor_width);
 
 	map_data map_datas[width * height];
 	for (int i = 0; i < width * height; i++) {
@@ -101,7 +101,9 @@ int main(void) {
 			}
 		}
 
-		move_robot(r, &global_time);
+		if (r->path_length > 0) {
+			move_robot(r, &global_time);
+		}
 
 		if (r->current_node == r->goal_1) {
 			assign_robot_path(r, &global_time, warehouse, height, width, r->goal_2, map_datas, algorithm);

@@ -179,7 +179,6 @@ void printWarehouse(node** grid, int width, int height, node** shelves, int shel
 //  Opretter graf af alle felter med 8 naboer (inkl. diagonaler)
 // ============================================================
 void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count) {
-
     if (width <= 1 || height <= 1 || !grid) {
         fprintf(stderr, "ERROR: Cannot create graph: invalid size GG!\n");
         exit(EXIT_FAILURE);
