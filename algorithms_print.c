@@ -3,7 +3,7 @@
 //
 
 #include "warehouse.h"
-#include "algorithms.h"
+#include "algorithms_print.h"
 
 #include <math.h>
 #include <stddef.h>
@@ -23,6 +23,8 @@ void remove_from_priority_queue(node* n, priority_queue* queue);
 key top_key(priority_queue queue);
 
 void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, priority_queue* queue, int map_id);
+
+void print_priority_queue(priority_queue queue);
 
 edge* lowest_g_predecessor(node* n, int map_id);
 edge* lowest_g_successor(node* n, int map_id);
@@ -200,6 +202,11 @@ void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_n
     start_node->rhs[map_id] = 0;
     key start_key = calculate_key(*start_node, *goal_node, map_datas[map_id].key_modifier, map_id);
     insert_to_priority_queue(start_node, start_key, &map_datas[map_id].priority_queue);
+    printf("LPA* has been initialized for the map with start in (%d, %d). The map looks as follows (g, rhs)\n", start_node->x, start_node->y);
+    print_g_and_rhs(warehouse, size_x, size_y, map_id);
+    printf("Priority queue:\n");
+    print_priority_queue(map_datas[map_id].priority_queue);
+    printf("The robot will now try to find a path towards (%d, %d)\n\n", goal_node->x, goal_node->y);
 }
 
 
@@ -240,13 +247,16 @@ void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, 
  * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
-void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id, node** warehouse, int size_x, int size_y) {
     if (map_datas[map_id].last_variable_node == NULL) {
         printf("kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
     //key_modifier bliver øget med afstanden mellem sidste mål-node og nuværende. Baseret på D* Lite
+    printf("The distance between the previous goal node (%d, %d), and the current goal node (%d, %d) is %.1f, so the key modifier changes from %.1f to %.1f.\n",
+        map_datas[map_id].last_variable_node->x, map_datas[map_id].last_variable_node->y, goal_node->x, goal_node->y,
+        h(*map_datas[map_id].last_variable_node, *goal_node), map_datas[map_id].key_modifier, map_datas[map_id].key_modifier + h(*map_datas[map_id].last_variable_node, *goal_node));
     map_datas[map_id].key_modifier += h(*map_datas[map_id].last_variable_node, *goal_node);
     map_datas[map_id].last_variable_node = goal_node;
 
@@ -254,24 +264,39 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
     priority_queue* queue = &(map_datas[map_id].priority_queue);
 
     while (is_key_smaller(top_key(*queue), calculate_key(*goal_node, *goal_node, key_modifier, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
+        if (is_key_smaller(top_key(*queue), calculate_key(*goal_node, *goal_node, key_modifier, map_id))) {
+            key t = top_key(*queue);
+            key g = calculate_key(*goal_node, *goal_node, key_modifier, map_id);
+            printf("The top key (%.1f, %.1f) is smaller than the goal key (%.1f, %.1f), so the algorithm continues.\n", t.k_1, t.k_2, g.k_1, g.k_2);
+        }
+        else {
+            printf("The rhs of the goal (%.1f) is not equal to the g of the goal (%.1f), so the algorithm continues.\n", goal_node->rhs[map_id], goal_node->g[map_id]);
+        }
         //Følgende del er baseret på D* Lite, når den håndterer flytning af start. I dette tilfælde er det ændret, så den håndterer flytning af mål.
         //Hvis top_key er mindre end den burde være efter key_modifier er ændret, lægges den tilbage i køen med sin nye key.
         key old_key = top_key(*queue);
         node* first_node = queue->first->node;
         remove_from_priority_queue(first_node, queue);
+        printf("The top node n in the priority queue (%d, %d) gets removed from the priority queue\n", first_node->x, first_node->y);
         key new_key = calculate_key(*first_node, *goal_node, key_modifier, map_id);
 
         if (is_key_smaller(old_key, new_key)) {
+            printf("Since the recalculated key for n (%.1f, %.1f) is larger than the old key for n (%.1f, %.1f), it is reinserted to the priority queue.\n",
+            new_key.k_1, new_key.k_2, old_key.k_1, old_key.k_2);
             insert_to_priority_queue(first_node, new_key, queue);
         }
         //Her slutter D* Lite-delen
         else if (first_node->g[map_id] > first_node->rhs[map_id]) {
+            printf("The g-value of n (%.1f) is larger than its rhs-value (%.1f), so its g-value is set to its rhs-value,\nand all of its successors are updated.\n",
+            first_node->g[map_id], first_node->rhs[map_id]);
             first_node->g[map_id] = first_node->rhs[map_id];
             for (int i = 0; i < first_node->neighbour_count; i++) {
                 update_node_lpa_star(first_node->successors[i]->dest, start_node, goal_node, key_modifier, queue, map_id);
             }
         }
         else {
+            printf("The g-value of n (%.1f) is not larger than its rhs-value (%.1f), so its g-value is set to infinity,\nand all of its successors and itself are updated.\n",
+            first_node->g[map_id], first_node->rhs[map_id]);
             first_node->g[map_id] = INFINITY;
             //Rækkefølgen her er potentielt en fejlkilde
             for (int i = 0; i < first_node->neighbour_count; i++) {
@@ -279,6 +304,11 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
             }
             update_node_lpa_star(first_node, start_node, goal_node, key_modifier, queue, map_id);
         }
+        printf("The map now looks like this:\n");
+        print_g_and_rhs(warehouse, size_x, size_y, map_id);
+        printf("The priority queue looks like this:\n");
+        print_priority_queue(*queue);
+        printf("\n");
     }
 }
 
@@ -311,6 +341,11 @@ void initialize_d_star_lite(node** warehouse, int size_x, int size_y, node* star
 
     key goal_key = calculate_key(*goal_node, *start_node, map_datas[map_id].key_modifier, map_id);
     insert_to_priority_queue(goal_node, goal_key, &map_datas[map_id].priority_queue);
+    printf("D* Lite has been initialized for the map with goal in (%d, %d). The map looks as follows (g, rhs)\n", goal_node->x, goal_node->y);
+    print_g_and_rhs(warehouse, size_x, size_y, map_id);
+    printf("Priority queue:\n");
+    print_priority_queue(map_datas[map_id].priority_queue);
+    printf("The robot will now try to find a path towards (%d, %d)\n\n", start_node->x, start_node->y);
 }
 
 /**
@@ -350,12 +385,15 @@ void update_node_d_star_lite(node* n, node* start, node* goal, float key_modifie
  * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
-void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id, node** warehouse, int size_x, int size_y) {
     if (map_datas[map_id].last_variable_node == NULL) {
         printf("kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
+    printf("The distance between the previous start node (%d, %d), and the current start node (%d, %d) is %.1f, so the key modifier changes from %.1f to %.1f.\n",
+        map_datas[map_id].last_variable_node->x, map_datas[map_id].last_variable_node->y, start_node->x, start_node->y,
+        h(*map_datas[map_id].last_variable_node, *start_node), map_datas[map_id].key_modifier, map_datas[map_id].key_modifier + h(*map_datas[map_id].last_variable_node, *start_node));
     map_datas[map_id].key_modifier += h(*map_datas[map_id].last_variable_node, *start_node);
     map_datas[map_id].last_variable_node = start_node;
 
@@ -363,22 +401,37 @@ void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map
     priority_queue* queue = &(map_datas[map_id].priority_queue);
 
     while (is_key_smaller(top_key(*queue), calculate_key(*start_node, *start_node, key_modifier, map_id)) || start_node->rhs[map_id] != start_node->g[map_id]) {
+        if (is_key_smaller(top_key(*queue), calculate_key(*start_node, *start_node, key_modifier, map_id))) {
+            key t = top_key(*queue);
+            key s = calculate_key(*start_node, *start_node, key_modifier, map_id);
+            printf("The top key (%.1f, %.1f) is smaller than the start key (%.1f, %.1f), so the algorithm continues.\n", t.k_1, t.k_2, s.k_1, s.k_2);
+        }
+        else {
+            printf("The rhs of the start (%.1f) is not equal to the g of the start (%.1f), so the algorithm continues.\n", start_node->rhs[map_id], start_node->g[map_id]);
+        }
         //Hvis top_key er mindre end den burde være efter key_modifier er ændret, lægges den tilbage i køen med sin nye key.
         key old_key = top_key(*queue);
         node* first_node = queue->first->node;
         remove_from_priority_queue(first_node, queue);
+        printf("The top node n in the priority queue (%d, %d) gets removed from the priority queue\n", first_node->x, first_node->y);
         key new_key = calculate_key(*first_node, *start_node, key_modifier, map_id);
 
         if (is_key_smaller(old_key, new_key)) {
+            printf("Since the recalculated key for n (%.1f, %.1f) is larger than the old key for n (%.1f, %.1f), it is reinserted to the priority queue.\n",
+            new_key.k_1, new_key.k_2, old_key.k_1, old_key.k_2);
             insert_to_priority_queue(first_node, new_key, queue);
         }
         else if (first_node->g[map_id] > first_node->rhs[map_id]) {
+            printf("The g-value of n (%.1f) is larger than its rhs-value (%.1f), so its g-value is set to its rhs-value,\nand all of its predecessors are updated.\n",
+            first_node->g[map_id], first_node->rhs[map_id]);
             first_node->g[map_id] = first_node->rhs[map_id];
             for (int i = 0; i < first_node->neighbour_count; i++) {
                 update_node_d_star_lite(first_node->predecessors[i]->source, start_node, goal_node, key_modifier, queue, map_id);
             }
         }
         else {
+            printf("The g-value of n (%.1f) is not larger than its rhs-value (%.1f), so its g-value is set to infinity,\nand all of its successors and itself are updated.\n",
+            first_node->g[map_id], first_node->rhs[map_id]);
             first_node->g[map_id] = INFINITY;
             //Rækkefølgen her er potentielt en fejlkilde
             for (int i = 0; i < first_node->neighbour_count; i++) {
@@ -386,6 +439,11 @@ void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map
             }
             update_node_d_star_lite(first_node, start_node, goal_node, key_modifier, queue, map_id);
         }
+        printf("The map now looks like this:\n");
+        print_g_and_rhs(warehouse, size_x, size_y, map_id);
+        printf("The priority queue looks like this:\n");
+        print_priority_queue(*queue);
+        printf("\n");
     }
 }
 
@@ -409,6 +467,45 @@ void print_g(node** warehouse, int size_x, int size_y, int map_id) {
             }
         }
         printf("\n");
+    }
+}
+
+/**
+ * Printer g- og rhs-værdier for alle nodes ud fra et bestemt map_id. Hvis en værdi er uendelig, printes INF
+ * @param warehouse array af arrays af nodes
+ * @param size_x int
+ * @param size_y int
+ * @param map_id id for det kort der arbejdes i
+ */
+void print_g_and_rhs(node** warehouse, int size_x, int size_y, int map_id) {
+    for (int y = 0; y < size_y; y++) {
+        for (int x = 0; x < size_x; x++) {
+            float node_g = warehouse[y][x].g[map_id];
+            if (node_g == INFINITY) {
+                printf("(INF,  ");
+            }
+            else {
+                printf("(%04.1lf, ", node_g);
+            }
+            float node_rhs = warehouse[y][x].rhs[map_id];
+            if (node_rhs == INFINITY) {
+                printf("INF ) ");
+            }
+            else {
+                printf("%04.1lf) ", node_rhs);
+            }
+        }
+        printf("\n");
+    }
+}
+
+void print_priority_queue(priority_queue queue) {
+    priority_queue_element* element = queue.first;
+    int i = 1;
+
+    while (element != NULL) {
+        printf("%d - node: (%d, %d), priority: (%.1f, %.1f)\n", i++, element->node->x, element->node->y, element->key.k_1, element->key.k_2);
+        element = element->next;
     }
 }
 

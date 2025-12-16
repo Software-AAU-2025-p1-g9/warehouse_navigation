@@ -1,46 +1,117 @@
+#include <math.h>
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <time.h>
 
 #include "warehouse.h"
-#include <Robot_controller.h>
+#include "warehouseGenerator.h"
+#include "order_generator.h"
+#include "Robot_controller.h"
 
+int main(void) {
+	int width, height, corridor_width, robot_count, edge_count, shelf_count, order_amount;
+	node** warehouse;
+	edge* edges;
+	node** shelves;
+	enum algorithm algorithm;
 
-	int main(void) {
-		int ShelveLength = 3, DropLength = 3,PickLength = 3;
+	printf("Width of warehouse:\n");
+	scanf("%d", &width);
+	printf("Height of warehouse:\n");
+	scanf("%d", &height);
+	printf("Corridor width:\n");
+	scanf("%d", &corridor_width);
+	printf("Robot count:\n");
+	scanf("%d", &robot_count);
 
-		node* Shelves[ShelveLength];
-		Shelves[0] = &(node){10, 20};
-		Shelves[1] = &(node){30, 40};
-		Shelves[2] = &(node){50, 60};
-		//MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
+	create_graph(width, height, &warehouse, &edges, &edge_count);
 
-		node* Pickup[DropLength]; //MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
-		Pickup[0] = &(node){1, 2};
-		Pickup[1] = &(node){3, 4};
-		Pickup[2] = &(node){5, 6};
+	int pick_up_count = width * height;
+	node* pick_up_points[pick_up_count];
+	int drop_off_count = width * height;
+	node* drop_off_points[drop_off_count];
 
-		node* Dropoff[PickLength]; //MIDLERTIDIG OG TILFÆLDIG VÆRDIER FOR ARRAYET
-		Dropoff[0] = &(node){100, 200};
-		Dropoff[1] = &(node){300, 400};
-		Dropoff[2] = &(node){500, 600};
+	generateWarehouseLayout(warehouse, width, height, &shelves, &shelf_count, drop_off_points, &drop_off_count, pick_up_points, &pick_up_count, corridor_width);
 
-		// VÆRDIERNE OVENOVER FORVENTES FRA LAGER GENERATOR
-
-		int Order_Amount;
-		printf("amount of orders");
-		scanf(" %d" , &Order_Amount);
-		order Order_Array[Order_Amount];
-		OrderRandomizer(Order_Amount, Order_Array, Pickup, PickLength,Dropoff, DropLength, Shelves, ShelveLength);
-
-		// slet for loop i endeligt version nedenunder kun for test.
-		for (int i = 0; i < Order_Amount; i++) {
-			printf("Order %d: node_1 = (%d,%d), node_2 = (%d,%d)\n",
-					i+1,
-				   Order_Array[i].node_1->x,
-				   Order_Array[i].node_1->y,
-				   Order_Array[i].node_2->x,
-				   Order_Array[i].node_2->y);
-		}
+	map_data map_datas[width * height];
+	for (int i = 0; i < width * height; i++) {
+		map_datas[i].priority_queue.first = NULL;
+		map_datas[i].key_modifier = 0;
+		map_datas[i].last_variable_node = NULL;
 	}
 
+	printf("Order amount:\n");
+	scanf("%d", &order_amount);
+	order orders[order_amount];
+
+	unsigned int seed;
+	printf("Seed (0 for random seed):\n");
+	scanf("%ud", &seed);
+	if (seed == 0) {
+		seed = (unsigned int)(time(NULL) ^ (uintptr_t)&seed); //mostly unpredictable seed for randomization
+	}
+	srand(seed);
+	order_randomizer(order_amount, orders, pick_up_points, pick_up_count, drop_off_points, drop_off_count, shelves, shelf_count);
+
+	printf("Algorithm:\n0 - A*\n1 - LPA*\n2 - D* Lite\n");
+	scanf("%d", &algorithm);
+
+	robot robots[robot_count];
+	//Prøver at reset robotterne til 0
+	for (int i = 0; i < robot_count; i++) {
+		robots[i].path_pos = 0;
+		robots[i].path_length = 0;
+		robots[i].path = NULL;
+		robots[i].goal_1 = NULL;
+		robots[i].goal_2 = NULL;
+		robots[i].has_order = 0;
+		robots[i].time_at_next_stop = 0;
+		robots[i].idle = 0;
+		robots[i].current_node = &warehouse[0][i];
+	}
+
+	int orders_assigned = 0, idle_counter = 0;
+	float global_time = 0;
+	clock_t start_time = clock();
+	//prøver få den til at loop til alle robotterne er idle, men idk
+	while (idle_counter < robot_count) {
+		//forsøg på at finde den robot med lavest tid
+		robot* r = NULL;
+		for (int i = 0; i < robot_count; i++) {
+			if (robots[i].idle == 1) continue; // ved ik om det rigtigt, men forsøger at få den til at gå videre hvis den robotten er idle
+			if (r == NULL || robots[i].time_at_next_stop < r->time_at_next_stop) {
+				r = &robots[i];
+			}
+		}
+		if (r == NULL) {
+			printf("Could not find a non-idle robot. %d orders completed.\n", orders_assigned - (robot_count - idle_counter));
+			break;
+		}
+
+		if (r->has_order == 0) {
+			if (orders_assigned < order_amount) {
+				assign_robot_order(r, orders[orders_assigned++]);
+				assign_robot_path(r, &global_time, warehouse, height, width, r->goal_1, map_datas, algorithm);
+			}
+			else {
+				free(r->path);
+				r->idle = 1;
+                idle_counter++;
+				continue;
+			}
+		}
+
+		move_robot(r, &global_time);
+
+		if (r->current_node == r->goal_1) {
+			assign_robot_path(r, &global_time, warehouse, height, width, r->goal_2, map_datas, algorithm);
+		}
+		if (r->current_node == r->goal_2) {
+			r->has_order = 0;
+		}
+	}
+	clock_t total_time = clock() - start_time;
+
+	printf("The robots completed the orders in %.1f time.\n", global_time);
+	printf("The process took %.1f seconds.\n", ((float) total_time)/CLOCKS_PER_SEC);
 }

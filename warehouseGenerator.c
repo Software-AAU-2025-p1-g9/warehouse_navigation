@@ -6,71 +6,9 @@
 #include "warehouse.h"
 #include <stdio.h>
 #include <stdlib.h>
-// -----------------------------------------
-// laver fast array til alle modes og tæller til hvor mange, der er lavet.
 
-
-// ============================================================
-// Hjælpefunktion: Opret en ny graf-node
-// ============================================================
-node* newNode(int x, int y) { // newnode er lige lidt ligegydig, da den returnerer
-    // Vi allokerer direkte et node-array og sætter alt til 0/NULL med calloc
-    node* n = calloc(1, sizeof(node)); // calloc sætter alle felter til 0/NULL
-    if (!n) return NULL;
-
-    // Felterne x og y er egentlig ligegyldige, men vi sætter dem for reference
-    n->x = x;
-    n->y = y;
-
-    // Resten nulstilles af calloc, men vi kan også eksplicit sætte dem
-    n->neighbour_count = 0;
-    n->successors = NULL;
-    n->predecessors = NULL;
-    n->g = NULL;
-    n->h = NULL;
-    n->rhs = NULL;
-
-    return n;
-}
-
-
-// ============================================================
-// createWarehouse
-//  Opretter lagerets grid af NodeGrid.
-// ============================================================
-node** createWarehouse(int width, int height) { // ændre den til ikke at være en struct (warehouse)
-    if (width <= 0 || height <= 0) {
-        fprintf(stderr, "ERROR: Invalid warehouse size GG!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // Alloker grid som array af pointers til rækker
-    node** grid= malloc(sizeof(node*) * height);
-    if (!grid) {
-        fprintf(stderr, "ERROR: Failed to allocate warehouse grid GG!\n");
-        exit(EXIT_FAILURE);
-    }
-
-    for (int y = 0; y < height; y++) {
-        grid[y] = calloc(width, sizeof(node)); // calloc nulstiller alt
-        if (!grid[y]) {
-            fprintf(stderr, "ERROR: Failed to allocate warehouse row GG %d!\n", y);
-            for (int i = 0; i < y; i++) free(grid[i]);
-            free(grid);
-            exit(EXIT_FAILURE);
-        }
-
-        for (int x = 0; x < width; x++) {
-            grid[y][x].x = x;
-            grid[y][x].y = y;
-
-        }
-    }
-
-    return grid; // Shelves/dropoffs/pickups arrays allokeres senere, når vi kender antal
-}
 //====================================================
-// adjustWarehouseSize -- DEN ER NY--
+// adjustWarehouseSize
 //  Sikrer at width ikke giver dobbelthylde i højre side
 //  + tjekker at width, height og corridorWidth er gyldige
 // ============================================================
@@ -86,7 +24,7 @@ void adjustWarehouseSize(int* width, int height, int corridorWidth)
 
     if ((*width % block) == 1) {
         (*width)--; // undgå dobbelthylde i højre side
-        printf("adjustWarehouseSize: width blev reduceret til %d for at undgå dobbelthylde i højre side GG!.\n", *width);
+        printf("Warehouse width adjusted to %d to avoid unreachable shelves.\n", *width);
     }
 
 }
@@ -102,7 +40,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     }
     *shelf_count = 0;
     *dropoff_count = width;
-    *pickup_count = width; // <-- tilføjet fra setPickupPoints
+    *pickup_count = width;
 
     // =====================================
     // første loop med shelf_count
@@ -121,17 +59,16 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     }
 
     // Nu har vi shelf_count klar
-    // <-- NYT: malloc shelves-array og error handling
 
-    *shelves = (node**) malloc(sizeof(node*) * (*shelf_count));
+    *shelves = (node**) malloc(sizeof(node*) * *shelf_count);
     if (!*shelves) {
         fprintf(stderr, "ERROR: Failed to allocate shelves array GG!\n");
         exit(EXIT_FAILURE);
     }
 
-    int shelves_in_array = 0; // <-- NYT: start indeks til fyldning af shelves
+    int shelves_in_array = 0;
     x = 0;
-    // Første loop: gennem hele bredden, hylde- og korridor-blokke tomme
+    // Andet loop: fylder shelves i arrayet, og sætter deres costs
 
     while (x < width) {
         // Hylde-blok
@@ -141,7 +78,7 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
                 node* n = &grid[y][x];
 
                 // Tilføj til shelves-array
-                (*shelves)[shelves_in_array++] = n; // <-- NYT
+                (*shelves)[shelves_in_array++] = n;
 
                 // Opdater costs til predecessors og successors
                 for (int i = 0; i < n->neighbour_count; i++) {
@@ -156,15 +93,15 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     }
 
     // ============================================================
-    // Nyt loop: opdater costs for korridor-nodes
+    // Trejde loop: opdater costs for korridor-nodes
     // ============================================================
     x = 0;
     while (x < width) {
-        // Hylde-blok (tom)
+        // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
             if (x == 0) s++;
         }
-        // Korridor-blok (tom)
+        // Korridor-blok
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
@@ -239,8 +176,7 @@ void printWarehouse(node** grid, int width, int height, node** shelves, int shel
 }
 
 // ============================================================
-// createGraphFromWarehouse ( create_graph=
-//  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
+//  Opretter graf af alle felter med 8 naboer (inkl. diagonaler)
 // ============================================================
 void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count) {
 
@@ -267,7 +203,7 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
         exit(EXIT_FAILURE);
     }
 
-    // 1. Opret noder for alle felter. Få kigget på dette også
+    // 1. Opret noder for alle felter.
     for (int y = 0; y < height; y++) {
         (*grid)[y] = calloc(width, sizeof(node));
         if (!(*grid)[y]) {
@@ -280,6 +216,14 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
         for (int x = 0; x < width; x++) {
             (*grid)[y][x].y = y;
             (*grid)[y][x].x = x;
+            (*grid)[y][x].g = malloc(width * height * sizeof(float));
+            (*grid)[y][x].h = malloc(width * height * sizeof(float));
+            (*grid)[y][x].rhs = malloc(width * height * sizeof(float));
+
+            if (!(*grid)[y][x].g || !(*grid)[y][x].h || !(*grid)[y][x].rhs) {
+                fprintf(stderr, "ERROR: Failed to allocate g, h and rhs!\n");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 
@@ -299,8 +243,13 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
             n->successors    = malloc(sizeof(edge*) * MAX_EDGES);
             n->predecessors  = malloc(sizeof(edge*) * MAX_EDGES);
             n->neighbour_count = 0;
+        }
+    }
 
-            for (int d = 0; d < 4; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            node* n = &(*grid)[y][x];
+            for (int d = 0; d < 4; d++) {
                 int neighbour_x = n->x + dirs[d][0];
                 int neighbour_y = n->y + dirs[d][1];
 
@@ -314,12 +263,12 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
                 edge* edge_1 = &(*edges)[edges_added++];
                 edge_1->source = n;
                 edge_1->dest   = neighbour_node;
-                edge_1->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
+                edge_1->cost   = (d < 2) ? 1.0f : 1.414f; // diagonaler koster √2
 
                 edge* edge_2 = &(*edges)[edges_added++];
                 edge_2->source = neighbour_node;
                 edge_2->dest   = n;
-                edge_2->cost   = (d < 2) ? 1.0 : 1.414; // diagonaler koster √2
+                edge_2->cost   = (d < 2) ? 1.0f : 1.414f; // diagonaler koster √2
 
                 n->successors[n->neighbour_count] = edge_1;
                 n->predecessors[n->neighbour_count++] = edge_2;
