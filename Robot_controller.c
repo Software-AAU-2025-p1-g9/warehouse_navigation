@@ -30,7 +30,7 @@ void assign_robot_path_a_star(robot* r, float global_time, node** warehouse, int
     find_shortest_path(&r->path, &r->path_length, r->current_node, goal_node, map_id);
 
     r->path_pos = 0;
-    float move_time = r->path_length > 0 ? r->path[0]->cost : 0;
+    float move_time = r->path_length > 0 ? r->path[0]->cost : 10;
     r->time_at_next_stop = global_time + move_time;
 }
 
@@ -53,7 +53,7 @@ void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, i
     }
     find_shortest_path(&r->path, &r->path_length, r->current_node, goal_node, map_id);
     r->path_pos = 0;
-    float move_time = r->path_length > 0 ? r->path[0]->cost : 0;
+    float move_time = r->path_length > 0 ? r->path[0]->cost : 10;
     r->time_at_next_stop = global_time + move_time;
 }
 
@@ -70,7 +70,7 @@ void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse
     }
     find_shortest_path_d_star_lite(&r->path, &r->path_length, r->current_node, goal_node, map_id);
     r->path_pos = 0;
-    float move_time = r->path_length > 0 ? r->path[0]->cost : 0;
+    float move_time = r->path_length > 0 ? r->path[0]->cost : 10;
     r->time_at_next_stop = global_time + move_time;
 }
 
