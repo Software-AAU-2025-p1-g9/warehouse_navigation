@@ -42,7 +42,11 @@ int main(void) {
 
 	printf("Order amount:\n");
 	scanf("%d", &order_amount);
-	order orders[order_amount];
+	order* orders = malloc(sizeof(order) * order_amount);
+	if (orders == NULL) {
+		printf("Not enough memory for orders.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	unsigned int seed;
 	printf("Seed (0 for random seed):\n");
