@@ -22,14 +22,16 @@ struct edge;  // fortæller at struct edge eksisterer
 typedef struct edge edge;
 
 
+
 // Funktioner til Warehouse
 // ===============================================================
 node** createWarehouse(int width, int height);
+void adjustWarehouseSize(int* width, int height, int corridorWidth);
 void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count,
                              node** dropoffs, int* dropoff_count, node** pickups, int* pickup_count,
                              int corridorWidth);
-void printWarehouse(node*** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count);
-void freeWarehouse(node*** grid, int width, int height, node** shelves, node** dropoffs, node** pickups);
+void printWarehouse(node** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count);
+void freeWarehouse(node** grid, int width, int height, node** shelves, node** dropoffs, node** pickups);
 
 // ===============================================================
 // Funktioner til grafen

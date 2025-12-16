@@ -7,21 +7,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//====================================================
+// adjustWarehouseSize
+//  Sikrer at width ikke giver dobbelthylde i højre side
+//  + tjekker at width, height og corridorWidth er gyldige
+// ============================================================
+void adjustWarehouseSize(int* width, int height, int corridorWidth)
+{
+    if (!width || *width <= 2 || height <= 2 || corridorWidth < 1) {
+        fprintf(stderr, "ERROR: Ugyldige lagerdimensioner GG MAN! width=%d, height=%d, corridorWidth=%d\n",
+                width ? *width : -1, height, corridorWidth);
+        exit(EXIT_FAILURE);
+    }
+
+    int block = 2 + corridorWidth;
+
+    if ((*width % block) == 1) {
+        (*width)--; // undgå dobbelthylde i højre side
+        printf("Warehouse width adjusted to %d to avoid unreachable shelves.\n", *width);
+    }
+
+}
+// dermed bliver up.
 // ============================================================
 // generateWarehouseLayout
 //  Fylder lageret med shelves, dropoffs og pickups
 // ============================================================
-void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node** dropoffs, int* dropoff_count, node** pickups, int* pickup_count, int corridorWidth)
-{
+void generateWarehouseLayout(node** grid, int width, int height, node*** shelves, int* shelf_count, node*** dropoffs, int* dropoff_count, node*** pickups, int* pickup_count, int corridorWidth) {
+    if (!grid) {
+        fprintf(stderr, "ERROR: Grid er NULL!\n");
+        exit(EXIT_FAILURE);
+    }
     *shelf_count = 0;
-    *dropoff_count = 0;
-    *pickup_count = 0; // <-- tilføjet fra setPickupPoints
+    *dropoff_count = width;
+    *pickup_count = width;
 
+    // =====================================
+    // første loop med shelf_count
+    // =====================================
     int x = 0;
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
-           *shelf_count += height -2;
+            if (x == 0) s++;
+            if (s < 2 && x < width)
+            *shelf_count += height -2;
         }
 
         // Korridor-blok
@@ -29,7 +59,6 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
     }
 
     // Nu har vi shelf_count klar
-    // <-- NYT: malloc shelves-array og error handling
 
     *shelves = (node**) malloc(sizeof(node*) * *shelf_count);
     if (!*shelves) {
@@ -37,18 +66,19 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
         exit(EXIT_FAILURE);
     }
 
-    int shelves_in_array = 0; // <-- NYT: start indeks til fyldning af shelves
+    int shelves_in_array = 0;
     x = 0;
-    // Første loop: gennem hele bredden, hylde- og korridor-blokke tomme
+    // Andet loop: fylder shelves i arrayet, og sætter deres costs
 
     while (x < width) {
         // Hylde-blok
         for (int s = 0; s < 2 && x < width; s++, x++) {
+            if (x == 0) s++;
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
 
                 // Tilføj til shelves-array
-                (*shelves)[shelves_in_array++] = n; // <-- NYT
+                (*shelves)[shelves_in_array++] = n;
 
                 // Opdater costs til predecessors og successors
                 for (int i = 0; i < n->neighbour_count; i++) {
@@ -62,20 +92,19 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {}
     }
 
-
-    // Nyt loop: fyld pickups og opdater costs
+    // ============================================================
+    // Trejde loop: opdater costs for korridor-nodes
+    // ============================================================
     x = 0;
     while (x < width) {
-        // Hylde-blok (tom)
-        for (int s = 0; s < 2 && x < width; s++, x++) { }
-
-        // Korridor-blok (tom)
+        // Hylde-blok
+        for (int s = 0; s < 2 && x < width; s++, x++) {
+            if (x == 0) s++;
+        }
+        // Korridor-blok
         for (int c = 0; c < corridorWidth && x < width; c++, x++) {
             for (int y = 1; y < height - 1; y++) {
                 node* n = &grid[y][x];
-
-                // Tilføj til pickups direkte (fra setPickupPoints)
-                pickups[(*pickup_count)++] = n;
 
                 // Opdater costs til predecessors og successors
                 for (int i = 0; i < n->neighbour_count; i++) {
@@ -90,24 +119,40 @@ void generateWarehouseLayout(node** grid, int width, int height, node*** shelves
                     if (!e) continue;
                     float dx = (float)(n->x - e->dest->x);
                     float dy = (float)(n->y - e->dest->y);
-                    e->cost = sqrtf(dx*dx + dy*dy); // float version
+                    e->cost = sqrtf(dx*dx + dy*dy);
                 }
             }
         }
     }
 
 
-    // Dropoff på tilfældig walkable position i korridor
-    int drop_x = corridorWidth; // eksempel: første korridorkolonne
-    int drop_y = height / 2;
-    dropoffs[(*dropoff_count)++] = &grid[drop_y][drop_x];
+    // ============================================================
+    // Pickups = hele øverste række
+    // ============================================================
+    *pickups = malloc(sizeof(node*) * width);
+    if (!*pickups) {
+        fprintf(stderr, "ERROR: Failed to allocate pickups array GG!\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int x = 0; x < width; x++)
+        (*pickups)[x] = &grid[0][x];  // øverste række
+
+    // ============================================================
+    // Dropoffs = hele nederste række
+    // ============================================================
+    *dropoffs = malloc(sizeof(node*) * width);
+    if (!*dropoffs) {
+        fprintf(stderr, "ERROR: Failed to allocate dropoffs array GG!\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int x = 0; x < width; x++)
+        (*dropoffs)[x] = &grid[height-1][x];  // nederste række
 }
 // ============================================================
 // printWarehouse
 //  Printer lager med symboler: S, D, P, .
 // ============================================================
-/*
-void printWarehouse(node*** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count) {
+void printWarehouse(node** grid, int width, int height, node** shelves, int shelf_count, node** dropoffs, int dropoff_count, node** pickups, int pickup_count) {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             node* c = &grid[y][x];
@@ -129,13 +174,17 @@ void printWarehouse(node*** grid, int width, int height, node** shelves, int she
         printf("\n");
     }
 }
-*/
 
 // ============================================================
-// createGraphFromWarehouse ( create_graph=
-//  Opretter graf af alle walkable felter med 8 naboer (inkl. diagonaler)
+//  Opretter graf af alle felter med 8 naboer (inkl. diagonaler)
 // ============================================================
 void create_graph(int width, int height, node*** grid, edge** edges, int* edge_count) {
+
+    if (width <= 1 || height <= 1 || !grid) {
+        fprintf(stderr, "ERROR: Cannot create graph: invalid size GG!\n");
+        exit(EXIT_FAILURE);
+    }
+
     int central_edge_count = (width - 2) * (height - 2) * 8;
     int edge_edge_count = (width - 2) * 2 * 5 + (height - 2) * 2 * 5;
     int corner_edge_count = 4 * 3;
@@ -154,7 +203,7 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
         exit(EXIT_FAILURE);
     }
 
-    // 1. Opret noder for alle felter. Få kigget på dette også
+    // 1. Opret noder for alle felter.
     for (int y = 0; y < height; y++) {
         (*grid)[y] = calloc(width, sizeof(node));
         if (!(*grid)[y]) {
@@ -200,7 +249,7 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             node* n = &(*grid)[y][x];
-            for (int d = 0; d < 4; d++) { // ER DETTE LAVET RIGTIGT DOBBELT TJEK!!!
+            for (int d = 0; d < 4; d++) {
                 int neighbour_x = n->x + dirs[d][0];
                 int neighbour_y = n->y + dirs[d][1];
 
@@ -234,8 +283,8 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
 // freeWarehouse
 //  Frigør grid og arrays
 // ============================================================
-void freeWarehouse(node*** grid, int width, int height, node** shelves, node** dropoffs, node** pickups) {
-    if (!grid) return;
+void freeWarehouse(node** grid, int width, int height, node** shelves, node** dropoffs, node** pickups) {
+    if (!grid || width <= 0 || height <= 0) return;
 
     for (int y = 0; y < height; y++)
         free(grid[y]);
