@@ -119,5 +119,5 @@ int main(void) {
 	clock_t total_time = clock() - start_time;
 
 	printf("The robots completed the orders in %.1f time.\n", global_time);
-	printf("The process took %.1f seconds.\n", ((float) total_time)/CLOCKS_PER_SEC);
+	printf("The process took %.2f seconds.\n", ((float) total_time)/CLOCKS_PER_SEC);
 }
