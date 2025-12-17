@@ -1,0 +1,82 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include "worker.h"
+#include <time.h>
+
+#define num_workers 5
+
+int main(void) {
+    // Create a small grid (3x3 nodes)
+    int size_x = 3;
+    int size_y = 3;
+
+    // Array of 9 nodes (size_x * size_y)
+    node nodes[size_y][size_x];
+
+
+    // Fill the node array with coordinates
+    for (int y = 0; y < size_y; y++) {
+        for (int x = 0; x < size_x; x++) {
+
+            // These will store edges for pathfinding but
+            /* will be useful later on once we have implemented a pathfinding algorithme
+             * and a layout */
+            nodes[y][x].x = x;
+            nodes[y][x].y = y;
+            nodes[y][x].neighbour_count = 0;
+            nodes[y][x].successors = NULL;
+            nodes[y][x].predecessors = NULL;
+            nodes[y][x].g = NULL;
+            nodes[y][x].h = NULL;
+            nodes[y][x].rhs = NULL;
+        }
+    }
+
+    // This ensures the random nodes we pick change each time we run the program
+    srand((unsigned) time(NULL));
+
+    // Create an array of workers
+    worker workers[num_workers];
+
+    // Give each worker a random A → B → C → A loop route
+    for (int i = 0; i < num_workers; i++) {
+        workers[i].route = NULL;
+        workers[i].route_length = 0;
+        workers[i].position = 0;
+    }
+
+    for (int i = 0; i < NUM_TIME; i++) {
+        generate_simple_loop_route(&workers[i], size_y, size_x, nodes);
+    }
+
+    for (int i = 0; i < num_workers; i++) {
+        printf("Workers route (length = %d):\n", i, workers[i].route_length);
+
+        for (int s = 0; s < workers[i].route_length; s++) {
+            edge* e = workers[i].route[s];
+
+            if (e != NULL) {
+                printf("Step %d: (%d, %d) -> (%d, %d), cost = %.2f, stay time is %.2f\n",
+                    s,
+                    e->source->x, e->source->y,
+                    e->dest->x, e->dest->y,
+                    e->cost);
+            } else {
+                printf(" There's no more edges, stay time is %.2f\n",
+                    s, workers[i].route[s]);
+            }
+            printf("Stay time at stops:  ");
+            for (int k = 0; k < NUM_TIME; k++) {
+                printf("%.2f ", workers[i].stay_time[k]);
+            }
+            printf("\n");
+        }
+        for (int i = 0; i < NUM_TIME; i++) {
+            free(workers[i].route);
+            workers[i].route = NULL;
+        }
+    }
+
+    printf("\n");
+    return 0;
+}
