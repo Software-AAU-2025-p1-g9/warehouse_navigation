@@ -1,7 +1,7 @@
 #ifndef WORKER_H
 #define WORKER_H
 #define NUM_STOPS 3
-#define MAX_NODE_NEIGHBOUR 8   // passer til grid med op til 8 naboer (N, S, E, W + diagonaler)
+#define MAX_NODE_NEIGHBOUR 8
 #include "algorithms.h"
 #include "warehouse.h"
 
@@ -16,10 +16,8 @@ typedef struct {
     float stay_time[NUM_STOPS];
     node* stops[NUM_STOPS];
 
-    // backup af predecessor-edge costs for den node vi sidst ændrede
     node* backed_up_node;
     float backed_up_costs[MAX_NODE_NEIGHBOUR];
-    int backed_up_count;
 } worker;
 
 

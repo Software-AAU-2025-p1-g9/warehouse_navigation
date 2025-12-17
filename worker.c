@@ -17,39 +17,31 @@ int stop_node(worker* w, node* n) {
     return -1;
 }
 
-void restore_backup_costs(worker* w) {
+void restore_worker_backup(worker* w) {
+    if (!w) {
+        return;
+    }
     if (w->backed_up_node == NULL) {
         return;
     }
 
     node* n = w->backed_up_node;
 
-    for (int i = 0; i < w->backed_up_count; i++) {
+    for (int i = 0; i < n->neighbour_count; i++) {
         n->predecessors[i]->cost = w->backed_up_costs[i];
     }
 
     w->backed_up_node = NULL;
-    w->backed_up_count = 0;
 }
-void backup_and_predecessor_costs(worker* w, node* n, float extra_time) {
-    if (n == NULL || n->predecessors == NULL) {
-        return;
-    }
 
-    int count = n->neighbour_count;
-
-    if (count > MAX_NODE_NEIGHBOUR) {
-        // If our MAX_NODE_NEIGHBOUR is lower than our graph
-        printf("ERROR: neighbour_count (%d) > MAX_NODE_NEIGHBOUR (%d)\n", count, MAX_NODE_NEIGHBOUR);
-        exit(EXIT_FAILURE);
-    }
+void backup_and_predecessor_costs(worker* w, node* n, float delay_time) {
+    if (w == NULL || n == NULL || n->predecessors == NULL) return;
 
     w->backed_up_node = n;
-    w->backed_up_count = count;
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; i < n->neighbour_count; i++) {
         w->backed_up_costs[i] = n->predecessors[i]->cost;
-        n->predecessors[i]->cost = n->predecessors[i]->cost + extra_time;
+        n->predecessors[i]->cost = n->predecessors[i]->cost + delay_time;
     }
 }
 
@@ -107,42 +99,6 @@ void shortest_path(node* start_node,
     }
 }
 
-void new_predecessor_costs(node* n, int map_id, float worker_wait,
-                                   float* old_costs, int* old_count) {
-    *old_count = 0;
-    if (!n || !n->predecessors) {
-        return;
-    }
-
-    for (int i = 0; i < n->neighbour_count; i++) {
-        edge* e = n->predecessors[i];
-        if (!e) {
-            continue;
-        }
-
-        old_costs[*old_count] = e->cost;
-        (*old_count)++;
-
-        float g_here = (n->g != NULL) ? n->g[map_id] : 0.0f;
-        e->cost = g_here + worker_wait;
-    }
-}
-
-void restore_predecessor_costs(node* n, float* old_costs, int old_count) {
-    if (!n || !n->predecessors) {
-        return;
-    }
-
-    int k = 0;
-    for (int i = 0; i < n->neighbour_count && k < old_count; i++) {
-        edge* e = n->predecessors[i];
-        if (!e) {
-            continue;
-        }
-        e->cost = old_costs[k++];
-    }
-}
-
 void move_worker(worker* w, float* global_time)
 {
     if (w == NULL || global_time == NULL) {
@@ -159,7 +115,7 @@ void move_worker(worker* w, float* global_time)
     }
 
     *global_time = w->time_stop;
-    restore_backup_costs(w);
+    restore_worker_backup(w);
 
     if (w->current_edge >= w->route_length) {
         w->current_edge = 0;
@@ -179,18 +135,18 @@ void move_worker(worker* w, float* global_time)
         wait_time = w->stay_time[stop_ref];
     }
 
-    float move_time = e->cost;
-    float total_time = wait_time + move_time;
+    float travel_time = e->cost + wait_time;
 
-    backup_and_predecessor_costs(w, from_node, total_time);
+    backup_and_predecessor_costs(w, w->current_node, wait_time);
+
     w->current_node = e->dest;
-
     w->current_edge++;
+
     if (w->current_edge >= w->route_length) {
         w->current_edge = 0;
     }
 
-    w->time_stop = *global_time + total_time;
+    w->time_stop = *global_time + travel_time;
 }
 
 
@@ -279,5 +235,4 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x, node nodes[si
     }
 
     w->time_stop = global_time + first_move;
-
 }
