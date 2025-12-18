@@ -126,6 +126,7 @@ int main(void) {
 			}
 
 			if (r->path_length > 0) {
+				move_robot(r, &global_time);
 				if (r->path_pos != r->path_length && r->path[r->path_pos]->cost != r->path_copy[r->path_pos].cost) {
 					assign_robot_path(r, &global_time, warehouse, height, width, r->path[r->path_length - 1]->dest, map_datas, algorithm);
 				}
