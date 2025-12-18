@@ -27,6 +27,8 @@ add_executable(warehouse_navigation
         algorithms.c
         order_generator.c
         order_generator.h
+        worker.c
+        worker.h
 )
 
 add_executable(warehouse_navigation_print
@@ -39,26 +41,10 @@ add_executable(warehouse_navigation_print
         Robot_controller.h
         astar.h
         astar.c
-        order_generator.c
-        order_generator.h
         algorithms_print.c
         algorithms_print.h
-)
-
-add_executable(algorithm_test
-        algorithms.c
-        warehouse.c
-        algorithms.h)
-add_executable(robot_controller Robot_controller.h Robot_controller.c)
-
-add_executable(worker_test
-        worker_simulation.c
+        order_generator.c
+        order_generator.h
         worker.c
         worker.h
-        algorithms.h
-        algorithms.c
-        astar.h
-        astar.c
-        warehouse.c
-        warehouse.h
 )

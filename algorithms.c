@@ -242,7 +242,7 @@ void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, 
  */
 void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
     if (map_datas[map_id].last_variable_node == NULL) {
-        printf("kortet med map_id %d er ikke initialiseret\n", map_id);
+        printf("Kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
@@ -352,7 +352,7 @@ void update_node_d_star_lite(node* n, node* start, node* goal, float key_modifie
  */
 void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
     if (map_datas[map_id].last_variable_node == NULL) {
-        printf("kortet med map_id %d er ikke initialiseret\n", map_id);
+        printf("Kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
     }
 
@@ -510,16 +510,16 @@ void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos,
  */
 edge* lowest_g_predecessor(node* n, int map_id) {
     edge* best_neighbour_edge = NULL;
-    float best_neighbour_g = INFINITY;
+    float best_neighbour_sum = INFINITY;
     for (int i = 0; i < n->neighbour_count; i++) {
         edge* neighbour_edge = n->predecessors[i];
-        float neighbour_g = neighbour_edge->source->g[map_id];
-        if (neighbour_g < best_neighbour_g && f_eq(n->g[map_id] - neighbour_g, neighbour_edge->cost)) {
+        float neighbour_sum = neighbour_edge->source->g[map_id] + neighbour_edge->cost;
+        if (neighbour_sum < best_neighbour_sum) {
             best_neighbour_edge = neighbour_edge;
-            best_neighbour_g = neighbour_edge->source->g[map_id];
+            best_neighbour_sum = neighbour_sum;
         }
     }
-    if (best_neighbour_edge != NULL && best_neighbour_g == INFINITY) {
+    if (best_neighbour_edge != NULL && best_neighbour_sum == INFINITY) {
         printf("Der blev valgt en uendelig edge");
     }
     return best_neighbour_edge;
@@ -533,16 +533,16 @@ edge* lowest_g_predecessor(node* n, int map_id) {
  */
 edge* lowest_g_successor(node* n, int map_id) {
     edge* best_neighbour_edge = NULL;
-    float best_neighbour_g = INFINITY;
+    float best_neighbour_sum = INFINITY;
     for (int i = 0; i < n->neighbour_count; i++) {
         edge* neighbour_edge = n->successors[i];
-        float neighbour_g = neighbour_edge->dest->g[map_id];
-        if (neighbour_g < best_neighbour_g && f_eq(n->g[map_id] - neighbour_g, neighbour_edge->cost)) {
+        float neighbour_sum = neighbour_edge->dest->g[map_id] + neighbour_edge->cost;
+        if (neighbour_sum < best_neighbour_sum) {
             best_neighbour_edge = neighbour_edge;
-            best_neighbour_g = neighbour_g;
+            best_neighbour_sum = neighbour_sum;
         }
     }
-    if (best_neighbour_edge != NULL && best_neighbour_g == INFINITY) {
+    if (best_neighbour_edge != NULL && best_neighbour_sum == INFINITY) {
         printf("Der blev valgt en uendelig edge\n");
     }
     return best_neighbour_edge;

@@ -4,14 +4,15 @@
 
 #include <warehouse.h>
 
-#include "algorithms_print.h"
-//#include "algorithms.h"
+//#include "algorithms_print.h"
+#include "algorithms.h"
 
 
 typedef struct {
     int path_pos;
     int path_length;
     edge** path;
+    edge* path_copy;
     float time_at_next_stop;
     node* goal_1;
     node* goal_2;

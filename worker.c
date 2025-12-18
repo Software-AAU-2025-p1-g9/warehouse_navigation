@@ -1,14 +1,8 @@
 #include <stdio.h>
 #include "worker.h"
 #include <stdlib.h>
-#include <time.h>
-#include "algorithms.h"
-#include "astar.h"
 
-int stop_node(worker* w, node* n) {
-    if (w == NULL || n == NULL) {
-        return -1;
-    }
+int stop_node_index(worker* w, node* n) {
     for (int i = 0; i < NUM_STOPS; i++) {
         if (w->stops[i] == n) {
             return i;
@@ -18,15 +12,12 @@ int stop_node(worker* w, node* n) {
 }
 
 void restore_worker_backup(worker* w) {
-    if (!w) {
-        return;
-    }
     if (w->backed_up_node == NULL) {
+        printf("A worker tried to restore backups but had none\n");
         return;
     }
 
     node* n = w->backed_up_node;
-
     for (int i = 0; i < n->neighbour_count; i++) {
         n->predecessors[i]->cost = w->backed_up_costs[i];
     }
@@ -34,26 +25,25 @@ void restore_worker_backup(worker* w) {
     w->backed_up_node = NULL;
 }
 
-void backup_and_predecessor_costs(worker* w, node* n, float delay_time) {
-    if (w == NULL || n == NULL || n->predecessors == NULL) return;
+void backup_and_increase_predecessor_costs(worker* w, float delay_time) {
+    if (w->current_node == NULL) {
+        printf("Worker is not standing on node\n");
+        exit(EXIT_FAILURE);
+    }
 
-    w->backed_up_node = n;
+    w->backed_up_node = w->current_node;
 
-    for (int i = 0; i < n->neighbour_count; i++) {
-        w->backed_up_costs[i] = n->predecessors[i]->cost;
-        n->predecessors[i]->cost = n->predecessors[i]->cost + delay_time;
+    for (int i = 0; i < w->backed_up_node->neighbour_count; i++) {
+        w->backed_up_costs[i] = w->backed_up_node->predecessors[i]->cost;
+        w->backed_up_node->predecessors[i]->cost += delay_time;
     }
 }
 
 
 
 // Runs either LPA*/D* LITE/A* and then call find_shortest_path
-void shortest_path(node* start_node,
-                                      node* goal_node, int size_x, int size_y, node nodes[size_y][size_x],
-                                      map_data* map_datas, enum algorithm alg, edge*** path,int* len) {
-    *path = NULL;
-    *len = 0;
-
+void shortest_path(node* start_node, node* goal_node, int size_x, int size_y, node** nodes,
+                   map_data* map_datas, enum algorithm alg, edge*** path,int* len) {
     switch (alg) {
         case LPA_STAR: {
             int map_id = node_pos(size_x, start_node->x, start_node->y);
@@ -63,7 +53,9 @@ void shortest_path(node* start_node,
                                     start_node, goal_node, map_datas);
             }
 
-            lpa_star(start_node, goal_node, map_datas, map_id);
+            //lpa_star(start_node, goal_node, map_datas, map_id, nodes, size_x, size_y); //Print version
+            lpa_star(start_node, goal_node, map_datas, map_id); //Fast version
+
             find_shortest_path(path, len, start_node, goal_node, map_id);
             break;
         }
@@ -72,17 +64,16 @@ void shortest_path(node* start_node,
             int map_id = node_pos(size_x, goal_node->x, goal_node->y);
 
             if (map_datas[map_id].last_variable_node == NULL) {
-                initialize_d_star_lite((node**)nodes, size_x, size_y,
-                                       start_node, goal_node, map_datas);
+                initialize_d_star_lite(nodes, size_x, size_y, start_node, goal_node, map_datas);
             }
 
-            d_star_lite(start_node, goal_node, map_datas, map_id);
-            find_shortest_path_d_star_lite(path, len,
-                                           start_node, goal_node, map_id);
+            //d_star_lite(start_node, goal_node, map_datas, map_id, nodes, size_x, size_y); //Print version
+            d_star_lite(start_node, goal_node, map_datas, map_id); //Fast version
+            find_shortest_path_d_star_lite(path, len, start_node, goal_node, map_id);
             break;
         }
 
-        case A_STAR: {
+        default: {
             int map_id = node_pos(size_x, start_node->x, start_node->y);
             int total_area = size_x * size_y;
 
@@ -94,7 +85,6 @@ void shortest_path(node* start_node,
                   map_id, total_area);
 
             find_shortest_path(path, len, start_node, goal_node, map_id);
-            break;
         }
     }
 }
@@ -114,7 +104,7 @@ void move_worker(worker* w, float* global_time)
         exit(EXIT_FAILURE);
     }
 
-    *global_time = w->time_stop;
+    *global_time = w->time_at_next_stop;
     restore_worker_backup(w);
 
     if (w->current_edge >= w->route_length) {
@@ -127,17 +117,15 @@ void move_worker(worker* w, float* global_time)
         exit(EXIT_FAILURE);
     }
 
-    node* from_node = w->current_node;
-
     float wait_time = 0;
-    int stop_ref = stop_node(w, from_node);
-    if (stop_ref >= 0) {
-        wait_time = w->stay_time[stop_ref];
+    int stop_index = stop_node_index(w, w->current_node);
+    if (stop_index >= 0) {
+        wait_time = w->stay_time[stop_index];
     }
 
     float travel_time = e->cost + wait_time;
 
-    backup_and_predecessor_costs(w, w->current_node, wait_time);
+    backup_and_increase_predecessor_costs(w, travel_time);
 
     w->current_node = e->dest;
     w->current_edge++;
@@ -146,14 +134,14 @@ void move_worker(worker* w, float* global_time)
         w->current_edge = 0;
     }
 
-    w->time_stop = *global_time + travel_time;
+    w->time_at_next_stop = *global_time + travel_time;
 }
 
 
 /* This function generate a route using edges
  * and create a test route for these workers*/
-void generate_simple_loop_route(worker* w, int size_y, int size_x, node nodes[size_y][size_x],
-                                map_data* map_data, enum algorithm alg, float global_time) {
+void generate_worker_route(worker* w, int size_y, int size_x, node** nodes,
+                           map_data* map_datas, enum algorithm alg) {
     w->current_edge = 0;
 
     // Picks 3 random coordinates
@@ -176,38 +164,30 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x, node nodes[si
     w->stops[2] = C;
 
     // Goes from A -> B by finding edges between nodes
-    int len_AB = 0;
+    int len_AB;
     edge** path_AB = NULL;
-
-    shortest_path(A, B, size_x, size_y,
-                        nodes, map_data, alg,
-                        &path_AB, &len_AB);
+    shortest_path(A, B, size_x, size_y, nodes, map_datas, alg, &path_AB, &len_AB);
 
     // Goes from B -> C by finding edges between nodes
-    int len_BC = 0;
+    int len_BC;
     edge** path_BC = NULL;
-
-    shortest_path(B, C, size_x, size_y,
-                        nodes, map_data, alg,
-                        &path_BC, &len_BC);
+    shortest_path(B, C, size_x, size_y, nodes, map_datas, alg, &path_BC, &len_BC);
 
     // Goes from C -> A by finding edges between nodes
-    int len_CA = 0;
+    int len_CA;
     edge** path_CA = NULL;
-
-    shortest_path(C, A, size_x, size_y,
-                        nodes, map_data, alg,
-                        &path_CA, &len_CA);
+    shortest_path(C, A, size_x, size_y, nodes, map_datas, alg, &path_CA, &len_CA);
 
     w->route_length = len_AB + len_BC + len_CA;
+    if (w->route_length == 0) {
+        printf("Worker got a route of zero length\n");
+        exit(EXIT_FAILURE);
+    }
 
     w->route = malloc(w->route_length * sizeof(edge*));
     if (w->route == NULL) {
-        w->route_length = 0;
-        free(path_AB);
-        free(path_BC);
-        free(path_CA);
-        return;
+        printf("No memory for worker route\n");
+        exit(EXIT_FAILURE);
     }
 
     int path_ref = 0;
@@ -220,19 +200,13 @@ void generate_simple_loop_route(worker* w, int size_y, int size_x, node nodes[si
     free(path_CA);
 
     for (int i = 0; i < NUM_STOPS; i++) {
-        w->stay_time[i] = (float)((rand() % 20) + 1);
+        w->stay_time[i] = (float)(rand() % 20) + 1;
     }
 
     w->current_edge = 0;
+    w->current_node = w->route[0]->source;
+    float first_move_time = w->route[0]->cost;
+    backup_and_increase_predecessor_costs(w, first_move_time);
 
-    float first_move = 0;
-
-    if (w->route_length > 0 && w->route[0] != NULL) {
-        w->current_node = w->route[0]->source;
-        first_move = w->route[0]->cost;
-    } else {
-        w->current_node = NULL;
-    }
-
-    w->time_stop = global_time + first_move;
+    w->time_at_next_stop = first_move_time;
 }

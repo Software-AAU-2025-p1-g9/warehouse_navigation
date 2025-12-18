@@ -14,8 +14,8 @@ enum algorithm {
 
 #define MAX_EDGES 8 // for alle shelves uendelig cost til at starte med. kør efter 1,41/sqr(2). skal være i et array.
 struct node {
-     int x;
-     int y;
+    int x;
+    int y;
     int neighbour_count;
     edge** successors; //array af pointere
     edge** predecessors; //array af pointere
@@ -31,9 +31,8 @@ struct edge {
 };
 
 struct order {
- node* node_1; //første order der skal fulføres
- node* node_2; //den anden order der skal fulføres
-
+    node* node_1; //første order der skal fulføres
+    node* node_2; //den anden order der skal fulføres
 };
 
 int node_pos(int size_x, int x, int y);
