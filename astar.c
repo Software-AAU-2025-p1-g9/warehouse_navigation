@@ -103,7 +103,7 @@ float h_calc(int x, int y, int goal_x, int goal_y) {
     /*Calculating difference of distance on x and y axis and adding this to the pyhtagoran
      *calculation with two times the smallest distance
      */
-    if ((goal_x-x) > (goal_y-y)) {
+    if (abs(goal_x-x) > abs(goal_y-y)) {
         return (float)(abs(goal_x-x)-abs(goal_y-y))+sqrtf((float)((goal_y-y)*(goal_y-y)*2));
     } else {
         return (float)(abs(goal_y-y)-abs(goal_x-x))+sqrtf((float)((goal_x-x)*(goal_x-x)*2));
