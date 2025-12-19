@@ -22,20 +22,20 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
     nodes[start_y][start_x].g[map_id] = 0;
     nodes[start_y][start_x].h[map_id] = h_calc(start_x, start_y, goal_x, goal_y);
 
-    //Tempeorary x and y used for calculations while still remembering originals
+    //Temporary x and y used for calculations while still remembering originals
     //Setting these to the start node as this is the first node we calculate from
     int temp_x = start_x,
         temp_y = start_y;
 
     //Check all nodes with lowest f(n) until the open node with lowest f(n) is the goal node
-    while (nodes[goal_y][goal_x].g[map_id] == INFINITY) {
-        //Calculating succeding nodes from temp y & x
+    while ((nodes[temp_y][temp_x].g[map_id]+nodes[temp_y][temp_x].h[map_id]) < nodes[goal_y][goal_x].g[map_id]) {
+        //Calculating succeeding nodes from temp y & x
         calc_succeding(nodes, temp_x, temp_y, map_id, goal_x, goal_y, open_nodes);
 
         //Integer used in while loop for for-loop like function
-        //lowestf keeps track of the lowest f(n) found
+        //lowest_f keeps track of the lowest f(n) found
         int i = 0;
-        float lowestf = INFINITY;
+        float lowest_f = INFINITY;
 
         int open_nodes_tracker = 0;
         //check open nodes for lowest f(n). Stop loop when the last open_node is found
@@ -47,11 +47,12 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
                                    nodes[open_nodes[i][0]][open_nodes[i][1]].h[map_id]);
                 //Check if the current f is below the lowest found
                 //If so set current x and y as lowest f
-                if (current_f < lowestf) {
+                if (current_f < lowest_f) {
+                    //printf("current f %f is lower than lowest f %f \n", current_f, lowest_f);
                     temp_y = open_nodes[i][0];
                     temp_x = open_nodes[i][1];
                     open_nodes_tracker = i;
-                    lowestf = current_f;
+                    lowest_f = current_f;
                 }
             }
             //Progress to next open node
@@ -82,16 +83,15 @@ void calc_succeding(node** nodes, int x, int y, int map_id, int goal_x, int goal
             //Setting new g of node (no need for new h as this will be the same as last)
             nodes[y][x].successors[i]->dest->g[map_id] = new_successor_g;
             //Adding to open_nodes again
-
             add_to_opennodes(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, open_nodes);
 
         //Checking if node is not calculated. If so calculate it
         } else if (old_successor_g == INFINITY) {
             //Setting g and h of non-calculated node + adding to open nodes
             nodes[y][x].successors[i]->dest->g[map_id] = new_successor_g;
-            nodes[y][x].successors[i]->dest->h[map_id] =
-            h_calc(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, goal_x, goal_y);
+            nodes[y][x].successors[i]->dest->h[map_id] = h_calc(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, goal_x, goal_y);
             add_to_opennodes(nodes[y][x].successors[i]->dest->x, nodes[y][x].successors[i]->dest->y, open_nodes);
+
         }
 
     }
@@ -104,9 +104,9 @@ float h_calc(int x, int y, int goal_x, int goal_y) {
      *calculation with two times the smallest distance
      */
     if ((goal_x-x) > (goal_y-y)) {
-        return (float)((goal_x-x)-(goal_y-y))+sqrtf((float)((goal_y-y)*(goal_y-y)*2));
+        return (float)(abs(goal_x-x)-abs(goal_y-y))+sqrtf((float)((goal_y-y)*(goal_y-y)*2));
     } else {
-        return (float)((goal_y-y)-(goal_x-x))+sqrtf((float)((goal_x-x)*(goal_x-x)*2));
+        return (float)(abs(goal_y-y)-abs(goal_x-x))+sqrtf((float)((goal_x-x)*(goal_x-x)*2));
     }
 }
 
