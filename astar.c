@@ -20,7 +20,6 @@ void astar(node** nodes, int start_x, int start_y, int goal_x, int goal_y, int m
 
     //Calculating starting node
     nodes[start_y][start_x].g[map_id] = 0;
-    nodes[start_y][start_x].h[map_id] = h_calc(start_x, start_y, goal_x, goal_y);
 
     //Temporary x and y used for calculations while still remembering originals
     //Setting these to the start node as this is the first node we calculate from
