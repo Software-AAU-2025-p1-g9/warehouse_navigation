@@ -4,12 +4,12 @@
 #define MAX_NODE_NEIGHBOURS 8
 
 #include "warehouse.h"
-//#include "algorithms_print.h"
-#include "algorithms.h"
+#include "algorithms_print.h"
+//#include "algorithms.h"
 #include "astar.h"
 
 typedef struct {
-    edge** route;
+    edge* route;
     int route_length;
     int current_edge;
     float time_at_next_stop;
@@ -23,7 +23,8 @@ typedef struct {
 } worker;
 
 
-void generate_worker_route(worker* w, int size_y, int size_x, node** nodes, map_data* map_datas, enum algorithm alg);
+void generate_worker_route(worker* w, int size_y, int size_x, node** nodes, map_data* map_datas, enum algorithm alg,
+                           edge* edges, int edge_count);
 
 void move_worker(worker* w, float* global_time);
 

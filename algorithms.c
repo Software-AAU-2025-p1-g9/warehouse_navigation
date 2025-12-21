@@ -24,8 +24,8 @@ key top_key(priority_queue queue);
 
 void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, priority_queue* queue, int map_id);
 
-edge* lowest_g_predecessor(node* n, int map_id);
-edge* lowest_g_successor(node* n, int map_id);
+edge* lowest_g_and_c_predecessor(node* n, int map_id);
+edge* lowest_g_and_c_successor(node* n, int map_id);
 void find_shortest_sub_path(edge*** path, int* path_length, int pos, node* start_node, node* goal_node, int map_id);
 void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos, node* start_node, node* goal_node, int map_id);
 
@@ -181,7 +181,8 @@ key top_key(priority_queue queue) {
  * @param goal_node node pointer
  * @param map_datas array af map_datas
  */
-void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, map_data* map_datas) {
+void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node,
+                         map_data* map_datas, edge* edges, int edge_count) {
     int map_id = node_pos(size_x, start_node->x, start_node->y);
     if (map_datas[map_id].last_variable_node != NULL) {
         printf("Kortet med map_id %d er allerede initialiseret\n", map_id);
@@ -190,6 +191,14 @@ void initialize_lpa_star(node** warehouse, int size_x, int size_y, node* start_n
     //De næste to linjer er fra D* Lite
     map_datas[map_id].key_modifier = 0;
     map_datas[map_id].last_variable_node = goal_node;
+    map_datas[map_id].previous_edges = malloc(sizeof(edge) * edge_count);
+    if (map_datas[map_id].previous_edges == NULL) {
+        printf("No memory for previous edges\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < edge_count; i++) {
+        map_datas[map_id].previous_edges[i] = edges[i];
+    }
 
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
@@ -240,7 +249,7 @@ void update_node_lpa_star(node* n, node* start, node* goal, float key_modifier, 
  * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
-void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id, edge* edges, int edge_count) {
     if (map_datas[map_id].last_variable_node == NULL) {
         printf("Kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
@@ -248,10 +257,17 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
 
     //key_modifier bliver øget med afstanden mellem sidste mål-node og nuværende. Baseret på D* Lite
     map_datas[map_id].key_modifier += h(*map_datas[map_id].last_variable_node, *goal_node);
-    map_datas[map_id].last_variable_node = goal_node;
-
     float key_modifier = map_datas[map_id].key_modifier;
     priority_queue* queue = &(map_datas[map_id].priority_queue);
+
+    map_datas[map_id].last_variable_node = goal_node;
+    for (int i = 0; i < edge_count; i++) {
+        if (map_datas[map_id].previous_edges[i].cost != edges[i].cost) {
+            map_datas[map_id].previous_edges[i].cost = edges[i].cost;
+            update_node_lpa_star(edges[i].dest, start_node, goal_node, key_modifier, queue, map_id);
+        }
+    }
+
 
     while (is_key_smaller(top_key(*queue), calculate_key(*goal_node, *goal_node, key_modifier, map_id)) || goal_node->rhs[map_id] != goal_node->g[map_id]) {
         //Følgende del er baseret på D* Lite, når den håndterer flytning af start. I dette tilfælde er det ændret, så den håndterer flytning af mål.
@@ -292,7 +308,8 @@ void lpa_star(node* start_node, node* goal_node, map_data* map_datas, int map_id
  * @param goal_node node pointer
  * @param map_datas array af map_datas
  */
-void initialize_d_star_lite(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node, map_data* map_datas) {
+void initialize_d_star_lite(node** warehouse, int size_x, int size_y, node* start_node, node* goal_node,
+                            map_data* map_datas, edge* edges, int edge_count) {
     int map_id = node_pos(size_x, goal_node->x, goal_node->y);
     if (map_datas[map_id].last_variable_node != NULL) {
         printf("Kortet med map_id %d er allerede initialiseret\n", map_id);
@@ -300,6 +317,14 @@ void initialize_d_star_lite(node** warehouse, int size_x, int size_y, node* star
     }
     map_datas[map_id].key_modifier = 0;
     map_datas[map_id].last_variable_node = start_node;
+    map_datas[map_id].previous_edges = malloc(sizeof(edge) * edge_count);
+    if (map_datas[map_id].previous_edges == NULL) {
+        printf("No memory for previous edges\n");
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < edge_count; i++) {
+        map_datas[map_id].previous_edges[i] = edges[i];
+    }
 
     for (int y = 0; y < size_y; y++) {
         for (int x = 0; x < size_x; x++) {
@@ -350,7 +375,7 @@ void update_node_d_star_lite(node* n, node* start, node* goal, float key_modifie
  * @param map_datas array af map_datas
  * @param map_id id for det kort der arbejdes i
  */
-void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id) {
+void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map_id, edge* edges, int edge_count) {
     if (map_datas[map_id].last_variable_node == NULL) {
         printf("Kortet med map_id %d er ikke initialiseret\n", map_id);
         exit(EXIT_FAILURE);
@@ -358,9 +383,15 @@ void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map
 
     map_datas[map_id].key_modifier += h(*map_datas[map_id].last_variable_node, *start_node);
     map_datas[map_id].last_variable_node = start_node;
-
     float key_modifier = map_datas[map_id].key_modifier;
     priority_queue* queue = &(map_datas[map_id].priority_queue);
+    map_datas[map_id].last_variable_node = goal_node;
+    for (int i = 0; i < edge_count; i++) {
+        if (map_datas[map_id].previous_edges[i].cost != edges[i].cost) {
+            map_datas[map_id].previous_edges[i].cost = edges[i].cost;
+            update_node_d_star_lite(edges[i].source, start_node, goal_node, key_modifier, queue, map_id);
+        }
+    }
 
     while (is_key_smaller(top_key(*queue), calculate_key(*start_node, *start_node, key_modifier, map_id)) || start_node->rhs[map_id] != start_node->g[map_id]) {
         //Hvis top_key er mindre end den burde være efter key_modifier er ændret, lægges den tilbage i køen med sin nye key.
@@ -444,7 +475,7 @@ void find_shortest_sub_path(edge*** path, int* path_length, int pos, node* start
         }
         return;
     }
-    edge* best_neighbour_edge = lowest_g_predecessor(goal_node, map_id);
+    edge* best_neighbour_edge = lowest_g_and_c_predecessor(goal_node, map_id);
     if (best_neighbour_edge == NULL) {
         printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(\n");
         exit(EXIT_FAILURE);
@@ -481,6 +512,7 @@ void find_shortest_path_d_star_lite(edge*** path, int* path_length, node* start_
  * @param map_id id for kortet der arbejdes i
  */
 void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos, node* start_node, node* goal_node, int map_id) {
+    if (map_id == 18) printf("length: %d\npos: (%d, %d)\n", *path_length, start_node->x, start_node->y);
     if (start_node == goal_node) {
         *path = malloc(sizeof(edge*) * *path_length);
         if (*path == NULL) {
@@ -489,7 +521,7 @@ void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos,
         }
         return;
     }
-    edge* best_neighbour_edge = lowest_g_successor(start_node, map_id);
+    edge* best_neighbour_edge = lowest_g_and_c_successor(start_node, map_id);
     if (best_neighbour_edge == NULL) {
         printf("Der kunne ikke findes nogen vej, og lageret sprang i luften :(\n");
         exit(EXIT_FAILURE);
@@ -508,7 +540,7 @@ void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos,
  * @param map_id id for kortet der arbejdes i
  * @return edge pointer fra predecessors
  */
-edge* lowest_g_predecessor(node* n, int map_id) {
+edge* lowest_g_and_c_predecessor(node* n, int map_id) {
     edge* best_neighbour_edge = NULL;
     float best_neighbour_sum = INFINITY;
     for (int i = 0; i < n->neighbour_count; i++) {
@@ -531,12 +563,13 @@ edge* lowest_g_predecessor(node* n, int map_id) {
  * @param map_id id for kortet der arbejdes i
  * @return edge pointer fra successors
  */
-edge* lowest_g_successor(node* n, int map_id) {
+edge* lowest_g_and_c_successor(node* n, int map_id) {
     edge* best_neighbour_edge = NULL;
     float best_neighbour_sum = INFINITY;
     for (int i = 0; i < n->neighbour_count; i++) {
         edge* neighbour_edge = n->successors[i];
         float neighbour_sum = neighbour_edge->dest->g[map_id] + neighbour_edge->cost;
+        if (map_id == 18) printf("(%d, %d). g: %.1f, c: %.1f\n", neighbour_edge->dest->x, neighbour_edge->dest->y, neighbour_edge->dest->g[map_id], neighbour_edge->cost);
         if (neighbour_sum < best_neighbour_sum) {
             best_neighbour_edge = neighbour_edge;
             best_neighbour_sum = neighbour_sum;

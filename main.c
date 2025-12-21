@@ -82,7 +82,7 @@ int main(void) {
 
 	worker workers[worker_count];
 	for (int i = 0; i < worker_count; i++) {
-		generate_worker_route(&workers[i], height, width, warehouse, map_datas, algorithm);
+		generate_worker_route(&workers[i], height, width, warehouse, map_datas, algorithm, edges, edge_count);
 		printf("Route generated for worker %d (%d, %d) -> (%d, %d) -> (%d, %d).\n", i, workers[i].stops[0]->x, workers[i].stops[0]->y, workers[i].stops[1]->x, workers[i].stops[1]->y, workers[i].stops[2]->x, workers[i].stops[2]->y);
 	}
 
@@ -115,7 +115,8 @@ int main(void) {
 			if (r->has_order == 0) {
 				if (orders_assigned < order_amount) {
 					assign_robot_order(r, orders[orders_assigned++]);
-					assign_robot_path(r, &global_time, warehouse, height, width, r->goal_1, map_datas, algorithm);
+					assign_robot_path(r, &global_time, warehouse, height, width, r->goal_1, map_datas, algorithm,
+						              edges, edge_count);
 				}
 				else {
 					free(r->path);
@@ -128,12 +129,14 @@ int main(void) {
 			if (r->path_length > 0) {
 				move_robot(r, &global_time);
 				if (r->path_pos != r->path_length && r->path[r->path_pos]->cost != r->path_copy[r->path_pos].cost) {
-					assign_robot_path(r, &global_time, warehouse, height, width, r->path[r->path_length - 1]->dest, map_datas, algorithm);
+					assign_robot_path(r, &global_time, warehouse, height, width, r->path[r->path_length - 1]->dest,
+					                  map_datas, algorithm, edges, edge_count);
 				}
 			}
 
 			if (r->current_node == r->goal_1) {
-				assign_robot_path(r, &global_time, warehouse, height, width, r->goal_2, map_datas, algorithm);
+				assign_robot_path(r, &global_time, warehouse, height, width, r->goal_2, map_datas, algorithm,
+					              edges, edge_count);
 			}
 			if (r->current_node == r->goal_2) {
 				r->has_order = 0;

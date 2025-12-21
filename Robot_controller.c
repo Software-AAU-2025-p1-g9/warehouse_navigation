@@ -8,14 +8,15 @@
 #include <warehouse.h>
 #include "astar.h"
 
-void assign_robot_path(robot* r, float* global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas, enum algorithm algorithm) {
+void assign_robot_path(robot* r, float* global_time, node** warehouse, int height, int width,
+                       node* goal_node, map_data* map_datas, enum algorithm algorithm, edge* edges, int edge_count) {
     *global_time = r->time_at_next_stop;
     switch (algorithm) {
         case D_STAR_LITE:
-            assign_robot_path_d_star_lite(r, *global_time, warehouse, height, width, goal_node, map_datas);
+            assign_robot_path_d_star_lite(r, *global_time, warehouse, height, width, goal_node, map_datas, edges, edge_count);
             break;
         case LPA_STAR:
-            assign_robot_path_lpa_star(r, *global_time, warehouse, height, width, goal_node, map_datas);
+            assign_robot_path_lpa_star(r, *global_time, warehouse, height, width, goal_node, map_datas, edges, edge_count);
             break;
         default:
             assign_robot_path_a_star(r, *global_time, warehouse, height, width, goal_node);
@@ -47,13 +48,14 @@ void assign_robot_order(robot* r, order o) {
     r->has_order = 1;
 }
 
-void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas) {
+void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, int height, int width,
+                                node* goal_node, map_data* map_datas, edge* edges, int edge_count) {
     int map_id = node_pos(width, r->current_node->x, r->current_node->y);
     if (map_datas[map_id].last_variable_node == NULL) {
-        initialize_lpa_star(warehouse, width, height, r->current_node, goal_node, map_datas);
+        initialize_lpa_star(warehouse, width, height, r->current_node, goal_node, map_datas, edges, edge_count);
     }
-    //lpa_star(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
-    lpa_star(r->current_node, goal_node, map_datas, map_id);
+    lpa_star(r->current_node, goal_node, map_datas, map_id, warehouse, width, height, edges, edge_count);
+    //lpa_star(r->current_node, goal_node, map_datas, map_id, edges, edge_count);
 
     if (r->path != NULL) {
         free(r->path);
@@ -64,13 +66,14 @@ void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, i
     r->time_at_next_stop = global_time + move_time;
 }
 
-void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse, int height, int width, node* goal_node, map_data* map_datas) {
+void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse, int height, int width,
+                                   node* goal_node, map_data* map_datas, edge* edges, int edge_count) {
     int map_id = node_pos(width, goal_node->x, goal_node->y);
     if (map_datas[map_id].last_variable_node == NULL) {
-        initialize_d_star_lite(warehouse, width, height, r->current_node, goal_node, map_datas);
+        initialize_d_star_lite(warehouse, width, height, r->current_node, goal_node, map_datas, edges, edge_count);
     }
-    //d_star_lite(r->current_node, goal_node, map_datas, map_id, warehouse, width, height);
-    d_star_lite(r->current_node, goal_node, map_datas, map_id);
+    d_star_lite(r->current_node, goal_node, map_datas, map_id, warehouse, width, height, edges, edge_count);
+    //d_star_lite(r->current_node, goal_node, map_datas, map_id, edges, edge_count);
 
     if (r->path != NULL) {
         free(r->path);
