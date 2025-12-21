@@ -610,7 +610,6 @@ void find_shortest_path_d_star_lite(edge*** path, int* path_length, node* start_
  * @param map_id id for kortet der arbejdes i
  */
 void find_shortest_sub_path_d_star_lite(edge*** path, int* path_length, int pos, node* start_node, node* goal_node, int map_id) {
-    if (map_id == 18) printf("length: %d\npos: (%d, %d)\n", *path_length, start_node->x, start_node->y);
     if (start_node == goal_node) {
         *path = malloc(sizeof(edge*) * *path_length);
         if (*path == NULL) {
