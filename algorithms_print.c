@@ -65,7 +65,7 @@ key calculate_key(node n, node variable_node, float key_modifier, int map_id) {
  * @return 1 eller 0
  */
 int is_key_smaller(key k, key l) {
-    if (k.k_1 != l.k_1) {
+    if (!f_eq(k.k_1, l.k_1)) {
         return k.k_1 < l.k_1;
     }
     else {
