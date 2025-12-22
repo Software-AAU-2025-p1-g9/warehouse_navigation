@@ -19,7 +19,7 @@ typedef struct {
     node* stops[NUM_STOPS];
 
     node* backed_up_node;
-    float backed_up_costs[MAX_NODE_NEIGHBOURS];
+    float backed_up_cost_change;
 } worker;
 
 

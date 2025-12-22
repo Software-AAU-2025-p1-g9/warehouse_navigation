@@ -262,7 +262,7 @@ void create_graph(int width, int height, node*** grid, edge** edges, int* edge_c
                 edge* edge_1 = &(*edges)[edges_added++];
                 edge_1->source = n;
                 edge_1->dest   = neighbour_node;
-                edge_1->cost   = (d < 2) ? 1.0f : 1.414f; // diagonaler koster √2
+                edge_1->cost   = (d < 2) ? 1.0f : sqrtf(2.0f); // diagonaler koster √2
 
                 edge* edge_2 = &(*edges)[edges_added++];
                 edge_2->source = neighbour_node;

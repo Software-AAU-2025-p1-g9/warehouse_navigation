@@ -18,5 +18,5 @@ float f_min(float n_1, float n_2) {
 }
 
 int f_eq(float n_1, float n_2) {
-    return n_1 - 0.00001 < n_2 && n_1 + 0.00001 > n_2;
+    return n_1 - 0.001 < n_2 && n_1 + 0.00001 > n_2;
 }

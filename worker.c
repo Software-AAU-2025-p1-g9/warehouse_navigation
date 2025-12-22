@@ -19,7 +19,7 @@ void restore_worker_backup(worker* w) {
 
     node* n = w->backed_up_node;
     for (int i = 0; i < n->neighbour_count; i++) {
-        n->predecessors[i]->cost = w->backed_up_costs[i];
+        n->predecessors[i]->cost -= w->backed_up_cost_change;
     }
 
     w->backed_up_node = NULL;
@@ -32,9 +32,9 @@ void backup_and_increase_predecessor_costs(worker* w, float delay_time) {
     }
 
     w->backed_up_node = w->current_node;
+    w->backed_up_cost_change = delay_time;
 
     for (int i = 0; i < w->backed_up_node->neighbour_count; i++) {
-        w->backed_up_costs[i] = w->backed_up_node->predecessors[i]->cost;
         w->backed_up_node->predecessors[i]->cost += delay_time;
     }
 }
