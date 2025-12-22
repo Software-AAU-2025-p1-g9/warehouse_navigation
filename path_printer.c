@@ -44,10 +44,6 @@ void path_printer(node** nodes, int goal_x, int goal_y, int start_x, int start_y
                 lowest_g = current_g;
                 temp_x = nodes[y][x].successors[i]->dest->x;
                 temp_y = nodes[y][x].successors[i]->dest->y;
-            } else if ((start_x == nodes[y][x].successors[i]->dest->x) && (start_y == nodes[y][x].successors[i]->dest->y)) {
-                lowest_g = 0;
-                temp_x = nodes[y][x].successors[i]->dest->x;
-                temp_y = nodes[y][x].successors[i]->dest->y;
             }
 
         }
