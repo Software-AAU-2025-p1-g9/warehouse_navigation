@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <warehouse.h>
 #include "astar.h"
+#include "path_printer.h"
 
 void assign_robot_path(robot* r, float* global_time, node** warehouse, int height, int width,
                        node* goal_node, map_data* map_datas, enum algorithm algorithm, edge* edges, int edge_count) {
@@ -35,7 +36,9 @@ void assign_robot_path_a_star(robot* r, float global_time, node** warehouse, int
 
     reset_g(warehouse, width, height, map_id);
     astar(warehouse, r->current_node->x, r->current_node->y, goal_node->x, goal_node->y, map_id, height * width);
+    path_printer(warehouse, goal_node->x, goal_node->y, r->current_node->x, r->current_node->y, map_id);
     find_shortest_path(&r->path, &r->path_length, r->current_node, goal_node, map_id);
+
 
     r->path_pos = 0;
     float move_time = r->path_length > 0 ? r->path[0]->cost : 10;
@@ -56,6 +59,7 @@ void assign_robot_path_lpa_star(robot* r, float global_time, node** warehouse, i
     }
     lpa_star(r->current_node, goal_node, map_datas, map_id, warehouse, width, height, edges, edge_count);
     //lpa_star(r->current_node, goal_node, map_datas, map_id, edges, edge_count);
+    path_printer(warehouse, goal_node->x, goal_node->y, r->current_node->x, r->current_node->y, map_id);
 
     if (r->path != NULL) {
         free(r->path);
@@ -74,6 +78,7 @@ void assign_robot_path_d_star_lite(robot* r, float global_time, node** warehouse
     }
     d_star_lite(r->current_node, goal_node, map_datas, map_id, warehouse, width, height, edges, edge_count);
     //d_star_lite(r->current_node, goal_node, map_datas, map_id, edges, edge_count);
+    path_printer(warehouse, goal_node->x, goal_node->y, r->current_node->x, r->current_node->y, map_id);
 
     if (r->path != NULL) {
         free(r->path);

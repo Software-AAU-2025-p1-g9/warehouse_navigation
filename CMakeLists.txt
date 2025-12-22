@@ -11,6 +11,8 @@ add_executable(a_star_test
         warehouse.c
         warehouse.h
         astar.h
+        path_printer.c
+        path_printer.h
 )
 
 add_executable(warehouse_navigation
@@ -29,6 +31,8 @@ add_executable(warehouse_navigation
         order_generator.h
         worker.c
         worker.h
+        path_printer.c
+        path_printer.h
 )
 
 add_executable(warehouse_navigation_print
@@ -47,4 +51,6 @@ add_executable(warehouse_navigation_print
         order_generator.h
         worker.c
         worker.h
+        path_printer.c
+        path_printer.h
 )
