@@ -385,7 +385,6 @@ void d_star_lite(node* start_node, node* goal_node, map_data* map_datas, int map
     map_datas[map_id].last_variable_node = start_node;
     float key_modifier = map_datas[map_id].key_modifier;
     priority_queue* queue = &(map_datas[map_id].priority_queue);
-    map_datas[map_id].last_variable_node = goal_node;
     for (int i = 0; i < edge_count; i++) {
         if (map_datas[map_id].previous_edges[i].cost != edges[i].cost) {
             map_datas[map_id].previous_edges[i].cost = edges[i].cost;
