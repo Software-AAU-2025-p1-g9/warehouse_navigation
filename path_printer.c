@@ -24,7 +24,7 @@ void path_printer(node** nodes, int goal_x, int goal_y, int start_x, int start_y
     shortest_path[array_position][1] = goal_x;
     array_position = 1;
 
-    printf("\nThe shortest path between x%dy%d nad x%dy%d is: \n", start_x, start_y, goal_x, goal_y);
+    printf("\nThe shortest path between x%dy%d and x%dy%d is: \n", start_x, start_y, goal_x, goal_y);
 
     while ((x != start_x) || (y != start_y)) {
         //Setting temporary int to the keep track of lowest g
